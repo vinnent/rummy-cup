@@ -1,0 +1,1664 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rummy Cup">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#d4ded6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15201c" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<title>Rummy Cup Samen</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Rubik:wght@600;700;800&display=swap">
+<style>
+/* Layout: one-screen game table. Felt surface fills the middle, opponent bar on top, your own rack tray docked at the bottom. */
+:root{
+  --felt:#d4ded6; --felt-edge:#bccabf; --felt-deep:#c3d0c6; --card:#eef3ef; --ink:#13201b; --muted:#53655d; --line:#a9b9af;
+  --tray:#25322e; --tray-ledge:#18221f; --tray-ink:#e9efea; --tray-muted:#9cada5; --tray-line:#41524b;
+  --ivory:#fcf9f0; --ivory-edge:#ddd3bd;
+  --t-red:#c42d27; --t-blue:#1b57ab; --t-black:#17171a; --t-orange:#d27310;
+  --accent:#f0b12b; --accent-ink:#1d1505; --sel:#e09400; --recent:#24877c; --bad:#bf2a24; --good:#2a7d4b;
+  --shadow:rgba(12,22,18,.26); --scrim:rgba(8,14,12,.45); --sticker:#fff;
+  --f-tile:"Rubik","Arial Black",system-ui,sans-serif;
+  --f-ui:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --felt:#15201c; --felt-edge:#0d1613; --felt-deep:#1f2e29; --card:#1b2723; --ink:#e5ede8; --muted:#91a39a; --line:#33463e;
+    --tray:#0c1210; --tray-ledge:#050908; --tray-ink:#e5ede8; --tray-muted:#87988f; --tray-line:#2b3a34;
+    --ivory:#eee7d6; --ivory-edge:#c6baa0;
+    --t-red:#c02a24; --t-blue:#1a54a6; --t-black:#17171a; --t-orange:#cc6e0c;
+    --accent:#f3b838; --accent-ink:#1d1505; --sel:#f3b838; --recent:#4cc2b3; --bad:#ff6d61; --good:#5cc98a;
+    --shadow:rgba(0,0,0,.5); --scrim:rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --felt:#15201c; --felt-edge:#0d1613; --felt-deep:#1f2e29; --card:#1b2723; --ink:#e5ede8; --muted:#91a39a; --line:#33463e;
+  --tray:#0c1210; --tray-ledge:#050908; --tray-ink:#e5ede8; --tray-muted:#87988f; --tray-line:#2b3a34;
+  --ivory:#eee7d6; --ivory-edge:#c6baa0;
+  --t-red:#c02a24; --t-blue:#1a54a6; --t-black:#17171a; --t-orange:#cc6e0c;
+  --accent:#f3b838; --accent-ink:#1d1505; --sel:#f3b838; --recent:#4cc2b3; --bad:#ff6d61; --good:#5cc98a;
+  --shadow:rgba(0,0,0,.5); --scrim:rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+
+html{height:100%;box-sizing:border-box;background:var(--felt)}
+*,*::before,*::after{box-sizing:inherit}
+body{height:100%;margin:0;overflow:hidden;color:var(--ink);font:400 15px/1.45 var(--f-ui);
+  background:var(--felt) radial-gradient(130% 90% at 50% 25%, var(--felt) 0 55%, var(--felt-edge) 100%)}
+body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:env(safe-area-inset-bottom,0px);background:var(--tray);z-index:1}
+button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-tile);text-wrap:balance;margin:0;line-height:1.15}
+p{margin:0}
+
+#app{height:100%;display:flex;flex-direction:column}
+.band{padding-left:max(16px, env(safe-area-inset-left,0px), calc((100% - 760px) / 2));
+      padding-right:max(16px, env(safe-area-inset-right,0px), calc((100% - 760px) / 2))}
+
+/* Header */
+.top{flex:none;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding-block:10px 6px}
+.opp{min-width:0}
+.opp-name{display:flex;align-items:center;gap:7px;font:600 15px/1.2 var(--f-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.opp-name .nm{overflow:hidden;text-overflow:ellipsis}
+.opp-sub{font:500 12px/1.3 var(--f-ui);color:var(--muted);margin-top:2px;white-space:nowrap}
+.brand{font:800 18px var(--f-tile);letter-spacing:-.01em}
+.dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dot.on{background:var(--good)}
+.pill{font:600 13px/1 var(--f-ui);padding:8px 12px;border-radius:999px;background:var(--felt-deep);white-space:nowrap;max-width:44vw;overflow:hidden;text-overflow:ellipsis}
+.pill.mine{background:var(--accent);color:var(--accent-ink)}
+.top-r{justify-self:end;display:flex;align-items:center;gap:6px}
+.pot{display:flex;flex-direction:column;align-items:center;line-height:1;padding:0 4px}
+.pot-n{font:700 17px var(--f-tile);font-variant-numeric:tabular-nums}
+.pot-l{font:600 10px var(--f-ui);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:3px}
+.icon-btn{width:40px;height:40px;border-radius:50%;border:0;background:transparent;display:grid;place-items:center;cursor:pointer;color:var(--ink)}
+.icon-btn:active{background:var(--felt-deep)}
+.ic{fill:currentColor}
+
+/* Table */
+.table{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-block:6px 14px}
+.sets{--stw:clamp(27px, 8.1vw, 40px);display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-start}
+.set{display:flex;flex-wrap:wrap;gap:3px;padding:5px;border-radius:10px;background:var(--felt-deep);max-width:100%}
+.set.bad{outline:2px dashed var(--bad);outline-offset:1px}
+.set .tile{--tw:var(--stw)}
+.add{width:var(--stw);height:calc(var(--stw) * 1.34);border-radius:6px;border:2px dashed var(--ink);background:transparent;font:700 20px/1 var(--f-ui);cursor:pointer;opacity:.75}
+.newset{height:calc(var(--stw) * 1.34 + 10px);padding:0 16px;border-radius:10px;border:2px dashed var(--ink);background:transparent;font:600 14px var(--f-ui);cursor:pointer}
+.empty{color:var(--muted);text-align:center;padding:40px 12px;max-width:34ch;margin:0 auto}
+.live-badge{display:inline-flex;align-items:center;gap:6px;font:700 11px var(--f-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--recent);margin-bottom:8px}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--recent);display:inline-block;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+
+/* Tiles */
+.tile{--tw:40px;flex:none;position:relative;width:var(--tw);height:calc(var(--tw) * 1.34);margin:0;border:0;
+  padding:0 0 calc(var(--tw) * .28);border-radius:calc(var(--tw) * .16);
+  background:linear-gradient(180deg,var(--ivory) 0 74%,var(--ivory-edge));
+  box-shadow:0 1px 0 var(--ivory-edge),0 2px 4px var(--shadow);
+  display:grid;place-items:center;font:800 calc(var(--tw) * .52)/1 var(--f-tile);letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;color:var(--t-black);user-select:none;-webkit-user-select:none}
+.tile::after{content:"";position:absolute;left:50%;bottom:14%;width:calc(var(--tw) * .2);height:calc(var(--tw) * .2);border-radius:50%;
+  border:max(1.5px, calc(var(--tw) * .045)) solid currentColor;transform:translateX(-50%);opacity:.5}
+button.tile{cursor:pointer}
+.c-r{color:var(--t-red)} .c-b{color:var(--t-blue)} .c-z{color:var(--t-black)} .c-o{color:var(--t-orange)}
+.tile.joker{padding:0}
+.tile.joker::after{display:none}
+.jk{width:70%;height:auto;display:block}
+.jk-f{fill:none;stroke:var(--t-red);stroke-width:2.2}
+.jk-e1{fill:var(--t-blue)} .jk-e2{fill:var(--t-black)}
+.jk-m{fill:none;stroke:var(--t-orange);stroke-width:2.2;stroke-linecap:round}
+.tile.mine{box-shadow:inset 0 -3px 0 var(--sel),0 1px 0 var(--ivory-edge),0 2px 4px var(--shadow)}
+.tile.recent{box-shadow:0 0 0 2px var(--recent),0 2px 4px var(--shadow)}
+.tile.new{box-shadow:0 0 0 2px var(--accent),0 2px 4px var(--shadow)}
+.tile.sel{transform:translateY(-6px);box-shadow:0 0 0 3px var(--sel),0 8px 12px var(--shadow)}
+
+/* Strip between table and rack */
+.strip{flex:none;min-height:48px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding-block:6px;font:500 14px/1.35 var(--f-ui);color:var(--muted)}
+.strip.bad{color:var(--bad);font-weight:600}
+.strip.hint{color:var(--ink)}
+.strip.picking{color:var(--ink)}
+.sel-n{font-weight:700}
+.strip-btns{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.chip{height:36px;padding:0 13px;border-radius:999px;border:1.5px solid var(--ink);background:transparent;font:600 13px var(--f-ui);cursor:pointer;white-space:nowrap}
+.chip.quiet{border-color:var(--line);color:var(--muted)}
+.meld{display:inline-flex;align-items:center;gap:8px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.meld-bar{width:72px;height:6px;border-radius:3px;background:var(--felt-deep);overflow:hidden;display:inline-block}
+.meld-fill{display:block;height:100%;background:var(--accent)}
+.meld-fill.ok{background:var(--good)}
+.live{display:inline-flex;align-items:center;gap:7px;color:var(--recent);font-weight:600}
+
+/* Rack tray */
+.dock{flex:none;background:var(--tray);color:var(--tray-ink);padding-block:10px 12px;border-top:3px solid var(--tray);position:relative;z-index:2}
+.dock.myturn{border-top-color:var(--accent)}
+.rack{--rt:clamp(32px, 9.3vw, 48px);display:flex;flex-wrap:wrap;align-content:flex-start;gap:6px;padding:9px 8px 8px;
+  min-height:calc(var(--rt) * 1.34 + 17px);max-height:calc(var(--rt) * 2.68 + 6px + 17px);overflow-y:auto;
+  background:var(--tray-ledge);border-radius:12px;box-shadow:inset 0 2px 0 var(--shadow)}
+.rack .tile{--tw:var(--rt)}
+.rack-empty{color:var(--tray-muted);font:500 14px var(--f-ui);align-self:center;padding:0 6px}
+.acts{display:flex;align-items:center;gap:10px;margin-top:10px;min-height:44px}
+.acts-r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.seg{display:inline-flex;background:var(--tray-ledge);border-radius:10px;padding:3px;flex:none}
+.seg-b{height:34px;padding:0 11px;border:0;border-radius:8px;background:transparent;color:var(--tray-muted);font:600 13px var(--f-ui);cursor:pointer}
+.seg-b.on{background:var(--tray-line);color:var(--tray-ink)}
+.wait{font:500 14px var(--f-ui);color:var(--tray-muted);text-align:right}
+.btn{height:44px;padding:0 18px;border-radius:12px;border:0;font:700 15px var(--f-ui);cursor:pointer;white-space:nowrap}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--tray-ink);box-shadow:inset 0 0 0 1.5px var(--tray-line)}
+.card .btn.ghost,.sheet .btn.ghost{color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.wide{width:100%}
+
+/* Cards (empty states) */
+.card{max-width:440px;margin:18px auto;background:var(--card);border-radius:18px;padding:22px 20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 0 var(--line),0 10px 30px var(--shadow)}
+.card h1{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.card h2,.sheet h2{font-size:22px;font-weight:700}
+.muted{color:var(--muted)}
+.note{color:var(--bad);font-weight:600}
+.deco{display:flex;gap:6px}
+.deco .tile{--tw:42px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font:700 11px var(--f-ui);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.field input{height:46px;border-radius:10px;border:1.5px solid var(--line);background:var(--felt);color:var(--ink);padding:0 12px;font:500 16px var(--f-ui);width:100%}
+
+/* Bottom sheet */
+#sheet{position:fixed;inset:0;z-index:20}
+.scrim{position:absolute;inset:0;background:var(--scrim)}
+.sheet{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;max-height:86%;overflow-y:auto;background:var(--card);color:var(--ink);
+  border-radius:20px 20px 0 0;padding-block:22px calc(22px + env(safe-area-inset-bottom,0px));
+  padding-left:max(20px, env(safe-area-inset-left,0px));padding-right:max(20px, env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:14px}
+.sheet h3{font-size:16px;font-weight:700;margin-top:6px}
+.sheet-acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.menu{display:flex;flex-direction:column}
+.menu-i{text-align:left;height:52px;border:0;border-bottom:1px solid var(--line);background:transparent;font:600 16px var(--f-ui);cursor:pointer;padding:0 2px}
+.stand{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;font:500 14px var(--f-ui);color:var(--muted)}
+.stand-l{font:700 11px var(--f-ui);text-transform:uppercase;letter-spacing:.08em}
+.stand b{font:700 18px var(--f-tile);color:var(--ink)}
+.reveal{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;background:var(--felt-deep)}
+.reveal-h{display:flex;justify-content:space-between;gap:10px;font-weight:600}
+.mini{display:flex;flex-wrap:wrap;gap:4px}
+.mini .tile{--tw:26px}
+.rules{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;max-width:62ch}
+.ex{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.ex .grp{display:flex;gap:3px;padding:4px;border-radius:8px;background:var(--felt-deep)}
+.ex .tile{--tw:28px}
+
+/* Pass-and-play: wider table and bigger tiles on a tablet, hidden rack during the hand-over */
+html.pass .band{padding-left:max(16px, env(safe-area-inset-left,0px), calc((100% - 1100px) / 2));padding-right:max(16px, env(safe-area-inset-right,0px), calc((100% - 1100px) / 2))}
+@media (min-width: 700px){
+  html.pass .sets{--stw:clamp(36px, 4.6vw, 56px);gap:12px 14px}
+  html.pass .rack{--rt:clamp(44px, 5.4vw, 64px)}
+}
+html.pass .acts{flex-wrap:wrap}
+.rack-hidden{align-content:center}
+.rack-hidden .tile-back{--tw:var(--rt);box-shadow:inset 0 0 0 2px var(--ivory),0 1px 3px var(--shadow)}
+.hand-to{font:600 15px var(--f-ui);color:var(--tray-ink);min-width:0}
+.pass-names{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width: 420px){ .pass-names{grid-template-columns:1fr} }
+
+/* Your turn: the tray edge glows a few times when the turn arrives */
+.dock.myturn{animation:turnglow 1.2s ease-out 3}
+@keyframes turnglow{0%{box-shadow:0 -10px 26px -6px var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
+
+/* Face-down double (house rule): tile back is striped accent */
+.tile-back{--tw:30px;flex:none;display:inline-block;position:relative;width:var(--tw);height:calc(var(--tw) * 1.34);border-radius:calc(var(--tw) * .18);
+  background:var(--accent) repeating-linear-gradient(135deg, rgba(0,0,0,.16) 0 3px, transparent 3px 7px);
+  box-shadow:inset 0 0 0 2px var(--ivory),0 1px 3px var(--shadow)}
+.tile-back.in-rack{--tw:var(--rt);border:0;padding:0;margin-left:8px;cursor:pointer;display:grid;place-items:center}
+.tile-back.in-rack span{font:800 8px/1 var(--f-ui);text-transform:uppercase;letter-spacing:.02em;color:var(--accent-ink);background:var(--accent);padding:2px;border-radius:3px}
+.opp-sub .tile-back{--tw:10px;vertical-align:-2px;margin-right:5px;box-shadow:inset 0 0 0 1px var(--ivory)}
+.dbl-hint{color:var(--ink)}
+.dbl-show{display:flex;align-items:center;gap:16px;padding:12px;border-radius:12px;background:var(--felt-deep)}
+.dbl-show .tile{--tw:46px}
+.dbl-show p{min-width:0}
+
+/* Jury Claude: emoji stickers slapped over the screen after every turn (no card, taps go straight through) */
+#jury{position:fixed;inset:0;z-index:15;pointer-events:none;overflow:hidden}
+.stk{position:absolute;font-size:var(--sz);line-height:1;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  transform:translate(-50%,-50%) rotate(var(--rot)) scale(0);
+  filter:drop-shadow(3px 0 0 var(--sticker)) drop-shadow(-3px 0 0 var(--sticker)) drop-shadow(0 3px 0 var(--sticker)) drop-shadow(0 -3px 0 var(--sticker)) drop-shadow(0 7px 10px var(--shadow));
+  animation:stkIn .45s cubic-bezier(.2,1.6,.4,1) var(--d) forwards, stkOut .45s ease-in var(--out) forwards}
+@keyframes stkIn{0%{transform:translate(-50%,-50%) rotate(calc(var(--rot) - 30deg)) scale(1.9);opacity:0}100%{transform:translate(-50%,-50%) rotate(var(--rot)) scale(1);opacity:1}}
+@keyframes stkOut{0%{transform:translate(-50%,-50%) rotate(var(--rot)) scale(1);opacity:1}100%{transform:translate(-50%,-70%) rotate(calc(var(--rot) + 8deg)) scale(.8);opacity:0}}
+
+/* Winner: a rainbow of emoji draws itself, then party emoji rain down */
+#rainbow{position:fixed;inset:0;z-index:30;pointer-events:none;overflow:hidden;transition:opacity .6s}
+#rainbow.fade{opacity:0}
+.rb-e,.rb-fall{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;line-height:1}
+.rb-e{position:absolute;font-size:var(--fs);transform:translate(-50%,-50%) scale(0);animation:rbpop .5s cubic-bezier(.3,1.7,.5,1) forwards}
+@keyframes rbpop{to{transform:translate(-50%,-50%) scale(1)}}
+.rb-name{position:absolute;left:50%;transform:translateX(-50%);padding:9px 18px;border-radius:999px;background:var(--accent);color:var(--accent-ink);
+  font:800 20px/1.1 var(--f-tile);white-space:nowrap;box-shadow:0 8px 24px var(--shadow);opacity:0;animation:rbname .5s 1.4s cubic-bezier(.3,1.6,.5,1) forwards}
+@keyframes rbname{from{opacity:0;transform:translateX(-50%) translateY(10px) scale(.8)}to{opacity:1;transform:translateX(-50%)}}
+.rb-fall{position:absolute;top:-48px;font-size:28px;animation-name:rbfall;animation-timing-function:cubic-bezier(.3,.1,.6,1);animation-fill-mode:both}
+@keyframes rbfall{from{transform:translateY(0) rotate(0)}to{transform:translateY(calc(100vh + 96px)) rotate(var(--r))}}
+
+@media (prefers-reduced-motion: reduce){
+  .rb-e{animation:none;transform:translate(-50%,-50%)} .rb-name{animation:none;opacity:1} .rb-fall{display:none}
+  .pulse{animation:none} .tile{transition:none}
+  .dock.myturn{animation:none!important}
+  .stk{transform:translate(-50%,-50%) rotate(var(--rot));animation:stkOut .45s ease-in var(--out) forwards}
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header id="top" class="top band"></header>
+  <main id="table" class="table band" aria-label="Tafel"></main>
+  <div id="strip" class="strip band"></div>
+  <footer id="dock" class="dock band"></footer>
+</div>
+<div id="sheet" hidden></div>
+<div id="jury" hidden role="img" aria-live="polite"></div>
+
+<script>
+/* Pure game logic: tiles, sets, scoring. Tile ids: colour (r rood, b blauw, z zwart, o oranje) + number + copy (a/b); jokers J1, J2. */
+window.RC = (() => {
+  const TILE_RE = /^(?:[rbzo](?:1[0-3]|[1-9])[ab]|J[12])$/;
+  const CORD = { z: 0, b: 1, o: 2, r: 3 };
+  const isJ = id => id[0] === 'J';
+  const num = id => +id.slice(1, -1);
+  const col = id => id[0];
+  const pts = id => isJ(id) ? 30 : num(id);
+  const sum = ids => ids.reduce((t, id) => t + pts(id), 0);
+  function allTiles() {
+    const out = [];
+    for (const c of 'rbzo') for (let n = 1; n <= 13; n++) for (const k of 'ab') out.push(c + n + k);
+    out.push('J1', 'J2');
+    return out;
+  }
+  function shuffle(a) {
+    const r = new Uint32Array(1);
+    for (let i = a.length - 1; i > 0; i--) {
+      crypto.getRandomValues(r);
+      const j = r[0] % (i + 1);
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function runOk(ids) {
+    const N = ids.filter(id => !isJ(id));
+    if (!N.length || ids.length > 13) return false;
+    const c = col(N[0]);
+    if (!N.every(id => col(id) === c)) return false;
+    const ns = N.map(num).sort((a, b) => a - b);
+    for (let i = 1; i < ns.length; i++) if (ns[i] === ns[i - 1]) return false;
+    return ns[ns.length - 1] - ns[0] + 1 <= ids.length;
+  }
+  function groupOk(ids) {
+    const N = ids.filter(id => !isJ(id));
+    if (!N.length || ids.length > 4) return false;
+    const n = num(N[0]);
+    if (!N.every(id => num(id) === n)) return false;
+    return new Set(N.map(col)).size === N.length;
+  }
+  const setOk = ids => ids.length >= 3 && (runOk(ids) || groupOk(ids));
+  function arrangeRun(ids) {
+    const N = ids.filter(id => !isJ(id)).sort((a, b) => num(a) - num(b));
+    const jk = ids.filter(isJ);
+    const out = [];
+    N.forEach((id, i) => {
+      if (i > 0) for (let g = num(N[i - 1]) + 1; g < num(id) && jk.length; g++) out.push(jk.shift());
+      out.push(id);
+    });
+    let lo = num(N[0]), hi = num(N[N.length - 1]);
+    while (jk.length) {
+      if (hi < 13) { out.push(jk.shift()); hi++; }
+      else if (lo > 1) { out.unshift(jk.shift()); lo--; }
+      else out.push(jk.shift());
+    }
+    return out;
+  }
+  function arrangeGroup(ids) {
+    const N = ids.filter(id => !isJ(id)).sort((a, b) => CORD[col(a)] - CORD[col(b)] || (a < b ? -1 : 1));
+    return N.concat(ids.filter(isJ));
+  }
+  function arrange(ids) {
+    const N = ids.filter(id => !isJ(id));
+    if (!N.length) return ids.slice();
+    const c = col(N[0]);
+    const runLike = N.every(id => col(id) === c) && new Set(N.map(num)).size === N.length;
+    return runLike ? arrangeRun(ids) : arrangeGroup(ids);
+  }
+  function setValue(ids) {
+    let v = 0;
+    if (runOk(ids)) {
+      const a = arrangeRun(ids);
+      const i = a.findIndex(id => !isJ(id));
+      const n0 = num(a[i]);
+      v = Math.max(v, a.reduce((t, _, j) => t + n0 + j - i, 0));
+    }
+    if (groupOk(ids)) v = Math.max(v, num(ids.find(id => !isJ(id))) * ids.length);
+    return v;
+  }
+  function sortRack(arr, mode) {
+    return arr.slice().sort((a, b) => {
+      if (isJ(a) !== isJ(b)) return isJ(a) ? 1 : -1;
+      if (isJ(a)) return a < b ? -1 : 1;
+      const d = mode === 'num'
+        ? (num(a) - num(b)) || (CORD[col(a)] - CORD[col(b)])
+        : (CORD[col(a)] - CORD[col(b)]) || (num(a) - num(b));
+      return d || (a < b ? -1 : a > b ? 1 : 0);
+    });
+  }
+  return { TILE_RE, CORD, isJ, num, col, pts, sum, allTiles, shuffle, runOk, groupOk, setOk, arrange, setValue, sortRack };
+})();
+</script>
+
+<script>
+(() => {
+const { TILE_RE, isJ, num, col, sum, allTiles, shuffle, setOk, arrange, setValue, sortRack } = window.RC;
+const CNAME = { r: 'rood', b: 'blauw', z: 'zwart', o: 'oranje' };
+const JOKER = '<svg viewBox="0 0 24 24" class="jk" aria-hidden="true"><circle cx="12" cy="12" r="8.6" class="jk-f"/><circle cx="9" cy="10" r="1.6" class="jk-e1"/><circle cx="15" cy="10" r="1.6" class="jk-e2"/><path d="M7.6 13.8 Q12 18.6 16.4 13.8" class="jk-m"/></svg>';
+const MENU = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="5" cy="12" r="2" class="ic"/><circle cx="12" cy="12" r="2" class="ic"/><circle cx="19" cy="12" r="2" class="ic"/></svg>';
+const NO_WRITE = 'Je kunt meekijken, maar niet meespelen. Vraag de eigenaar van deze pagina om je uit te nodigen als bewerker.';
+/* Pass-and-play build (Rummy Cup Samen): one device, two players, everything saved on this device, no Claude runtime needed. */
+const PASS = true;
+if (PASS) document.documentElement.classList.add('pass');
+const $ = s => document.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+};
+let token = store.get('rc-token');
+if (!token || !/^t[a-z0-9]{6,24}$/.test(token)) {
+  token = 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  store.set('rc-token', token);
+}
+
+const S = {
+  room: null, uid: null, key: null, ready: false, noDb: false, slow: false, dbErr: null,
+  G: null, rack: null, rackReady: false, draft: null, sel: new Set(),
+  sort: store.get('rc-sort') === 'num' ? 'num' : 'color',
+  nameDraft: store.get('rc-name') || '', renameDraft: '', canWrite: null,
+  busy: false, msg: null, msgTimer: null, newTile: null, peers: [], sheet: null,
+  lastTurnKey: '', overShown: null, revealSent: null, lastPres: null, loadTimer: null,
+  inBusy: false, inDone: null, aiOff: false, gameFresh: false, rackFresh: false, view: 'play', pn: ['', ''], mute: store.get('rc-mute') === '1', restore: null, juryReady: false
+};
+let gameRef = null, rackRef = null, sampleP = null;
+
+/* ---------- helpers ---------- */
+function E(tag, attrs, ...kids) {
+  const n = document.createElement(tag);
+  if (tag === 'button') n.type = 'button';
+  if (attrs) for (const k in attrs) {
+    const v = attrs[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') n.className = v;
+    else if (k === 'html') n.innerHTML = v;
+    else if (k === 'disabled') n.disabled = true;
+    else n.setAttribute(k, v === true ? '' : String(v));
+  }
+  for (const c of kids.flat(Infinity)) {
+    if (c == null || c === false || c === '') continue;
+    n.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  }
+  return n;
+}
+function tileEl(id, interactive) {
+  const n = document.createElement(interactive ? 'button' : 'span');
+  if (interactive) n.type = 'button'; else n.setAttribute('role', 'img');
+  n.className = 'tile';
+  if (isJ(id)) { n.classList.add('joker'); n.innerHTML = JOKER; n.setAttribute('aria-label', 'Joker'); }
+  else { n.classList.add('c-' + col(id)); n.textContent = String(num(id)); n.setAttribute('aria-label', CNAME[col(id)] + ' ' + num(id)); }
+  return n;
+}
+const cleanIds = a => Array.isArray(a) ? a.filter(id => typeof id === 'string' && TILE_RE.test(id)) : [];
+function cleanTable(t) {
+  if (!Array.isArray(t) || t.length > 60) return null;
+  const seen = new Set(), out = [];
+  for (const s of t) {
+    if (!Array.isArray(s) || s.length > 13) return null;
+    for (const id of s) { if (typeof id !== 'string' || !TILE_RE.test(id) || seen.has(id)) return null; seen.add(id); }
+    out.push(s.slice());
+  }
+  return out;
+}
+const tableOf = g => (g && Array.isArray(g.table)) ? g.table.filter(Array.isArray).map(cleanIds) : [];
+function seatIdx() { const g = S.G; if (!g || !Array.isArray(g.seats) || !S.key) return -1; return g.seats.indexOf(S.key); }
+function oppKey() { const g = S.G, i = seatIdx(); return (i < 0 || !g) ? null : (g.seats[1 - i] || null); }
+function count(k) { const c = S.G && S.G.counts && S.G.counts[k]; return typeof c === 'number' ? c : 0; }
+/* Your rack as saved, minus any tile that is provably somewhere else: on the table, in the pot, lying face down,
+   or given away in a swap. If a save of the rack was ever lost (a dropped connection, the page reloading mid-move),
+   a tile could otherwise show up twice: once on the table and once as a ghost in your rack. */
+function hand() {
+  const g = S.G, r = S.rack;
+  if (!g || !r || r.gameId !== g.gameId || !Array.isArray(r.tiles)) return null;
+  const taken = takenElsewhere(g), seen = new Set();
+  return cleanIds(r.tiles).filter(id => !taken.has(id) && !seen.has(id) && seen.add(id));
+}
+function takenElsewhere(g) {
+  const t = new Set(tableOf(g).flat());
+  if (Array.isArray(g.pool)) for (const id of g.pool) t.add(id);
+  const own = dblOf(S.key);
+  if (own) t.add(own);
+  const opp = oppKey();
+  if (opp) for (const id of [dblOf(opp), inOf(opp)]) if (id) t.add(id);
+  const out = g.swapOut && Array.isArray(g.swapOut[S.key]) ? g.swapOut[S.key] : [];
+  for (const id of out) if (typeof id === 'string') t.add(id);
+  return t;
+}
+/* Only act on data the server has confirmed, not on a copy cached from an earlier visit. */
+function myTurn() { const g = S.G; return !!g && (!PASS || S.view === 'play') && S.gameFresh && S.rackFresh && g.status === 'playing' && seatIdx() >= 0 && g.turn === seatIdx() && hand() !== null; }
+/* When the saved rack holds such a ghost for a few seconds while nothing is being saved, write the cleaned rack back. */
+let healTimer = null, healSig = null;
+function healSig_() { const g = S.G, r = S.rack, hd = hand(); return (g && r && hd) ? g.gameId + ':' + r.tiles.join(',') + '>' + hd.join(',') : null; }
+function healCheck() {
+  const g = S.G, r = S.rack, hd = hand();
+  if (!g || !r || !hd || !S.gameFresh || !S.rackFresh || seatIdx() < 0 || g.status !== 'playing' || !gameRef) return;
+  if (r.tiles.length === hd.length) { healSig = null; clearTimeout(healTimer); return; }
+  const sig = healSig_();
+  if (sig === healSig) return;
+  healSig = sig; clearTimeout(healTimer);
+  healTimer = setTimeout(async () => {
+    if (S.busy || healSig_() !== sig) { healSig = null; healCheck(); return; }
+    const g2 = S.G, hd2 = hand();
+    S.busy = true;
+    try {
+      if (await saveRack(g2.gameId, hd2.slice())) {
+        const left = hd2.length + extras(S.key);
+        if (count(S.key) !== left) await tryWrite(() => gameRef.update({ counts: { [S.key]: left } }));
+      }
+    } catch (e) {}
+    finally { S.busy = false; healSig = null; render(); }
+  }, 2500);
+}
+function melded() { const g = S.G; return !!(g && g.melded && g.melded[S.key]); }
+function nameOf(k) {
+  if (!k) return 'Tegenspeler';
+  if (k === S.key) return 'Jij';
+  const n = S.G && S.G.names && S.G.names[k];
+  return (typeof n === 'string' && n.trim()) ? n.trim().slice(0, 20) : 'Tegenspeler';
+}
+const myName = () => (S.nameDraft || '').trim().slice(0, 20);
+const tilesWord = n => n === 1 ? '1 steen' : `${n} stenen`;
+function flash(text, kind) {
+  S.msg = { text, kind };
+  clearTimeout(S.msgTimer);
+  S.msgTimer = setTimeout(() => { S.msg = null; render(); }, 5500);
+  render();
+}
+function writeErr(e) {
+  const c = e && e.code;
+  if (c === 'invalid_argument') return 'Opslaan lukte niet: je mag in dit spel geen zetten doen. Vraag de eigenaar om je uit te nodigen als bewerker.';
+  if (c === 'quota_exceeded') return 'De opslag van deze pagina is vol.';
+  return 'Opslaan lukte niet. Controleer je verbinding en probeer het opnieuw.';
+}
+async function tryWrite(fn) {
+  try { return await fn(); }
+  catch (e) { if (e && e.code === 'unavailable') { await sleep(300 + Math.random() * 500); return await fn(); } throw e; }
+}
+function buzz() { try { navigator.vibrate && navigator.vibrate([60, 40, 60]); } catch (e) {} }
+const tileName = id => isJ(id) ? 'joker' : `${CNAME[col(id)]} ${num(id)}`;
+const twin = id => isJ(id) ? null : id.slice(0, -1) + (id.slice(-1) === 'a' ? 'b' : 'a');
+const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+/* ---------- house rule: face-down doubles ---------- */
+/* g.dbl[key]   = the tile a player has put face down beside the rack (still theirs).
+   g.dblIn[key] = a tile the other player swapped to them, waiting to be added to their private rack.
+   counts[key]  = rack + face-down + incoming, so the tile total never jumps during a swap. */
+function dblOf(k) { const v = S.G && S.G.dbl && S.G.dbl[k]; return typeof v === 'string' && TILE_RE.test(v) ? v : null; }
+function inOf(k) { const v = S.G && S.G.dblIn && S.G.dblIn[k]; return typeof v === 'string' && TILE_RE.test(v) ? v : null; }
+const extras = k => (dblOf(k) ? 1 : 0) + (inOf(k) ? 1 : 0);
+function ownedAll(hd) { const out = hd.slice(); for (const t of [dblOf(S.key), inOf(S.key)]) if (t && !out.includes(t)) out.push(t); return out; }
+function doublePairs(arr) { const s = new Set(arr); return arr.filter(id => !isJ(id) && id.endsWith('a') && s.has(twin(id))); }
+function canPutDouble() { return myTurn() && !!S.draft && !S.busy && !dblOf(S.key) && !inOf(S.key); }
+
+/* ---------- your-turn signal: chime, vibration, tab title ---------- */
+let actx = null;
+function unlockAudio() {
+  try {
+    if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); }
+    if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
+  } catch (e) {}
+}
+function chime() {
+  try {
+    if (S.mute || !actx || actx.state !== 'running') return;
+    const t0 = actx.currentTime + 0.02;
+    [[659.25, 0], [880, 0.13], [1318.5, 0.26]].forEach(([f, dt]) => {
+      const o = actx.createOscillator(), gn = actx.createGain();
+      o.type = 'triangle'; o.frequency.value = f;
+      gn.gain.setValueAtTime(0.0001, t0 + dt);
+      gn.gain.exponentialRampToValueAtTime(0.22, t0 + dt + 0.02);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.5);
+      o.connect(gn); gn.connect(actx.destination);
+      o.start(t0 + dt); o.stop(t0 + dt + 0.55);
+    });
+  } catch (e) {}
+}
+function setTitle() {
+  const base = PASS ? 'Rummy Cup Samen' : 'Rummy Cup';
+  const want = (!PASS && myTurn() && document.visibilityState === 'hidden') ? '● Jouw beurt · ' + base : base;
+  if (document.title !== want) document.title = want;
+}
+function turnAlert() { if (!S.mute) buzz(); chime(); setTitle(); }
+let wakeLock = null;
+async function wake() {
+  try {
+    if (wakeLock || !navigator.wakeLock || document.visibilityState !== 'visible') return;
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch (e) {}
+}
+function focusName() { setTimeout(() => { const n = document.getElementById(S.sheet === 'confirmNew' ? 'name2' : 'name'); if (n) n.focus(); }, 0); }
+
+/* ---------- live room ---------- */
+function oppOnline() {
+  const g = S.G, i = seatIdx();
+  if (!g || i < 0) return false;
+  return S.peers.some(p => !p.isMe && p.presence && p.presence.g === g.gameId && p.presence.seat === 1 - i);
+}
+function livePreview() {
+  const g = S.G;
+  if (!g || g.status !== 'playing' || g.turn === seatIdx()) return null;
+  for (const p of S.peers) {
+    if (p.isMe || !p.presence) continue;
+    const pr = p.presence;
+    if (pr.g === g.gameId && pr.seat === g.turn && pr.t === g.turnNo && Array.isArray(pr.table)) {
+      const t = cleanTable(pr.table);
+      if (t) return t;
+    }
+  }
+  return null;
+}
+function pushPresence() {
+  if (!S.room || !S.G) return;
+  const i = seatIdx();
+  const d = myTurn() ? S.draft : null;
+  const p = { g: S.G.gameId, seat: i >= 0 ? i : null, t: d ? d.turnNo : null, table: d ? d.table : null };
+  const j = JSON.stringify(p);
+  if (j === S.lastPres) return;
+  S.lastPres = j;
+  S.room.presence(p).catch(() => { S.lastPres = null; });
+}
+
+/* ---------- game state ---------- */
+function ensureDraft() {
+  const g = S.G;
+  if (!myTurn()) { if (S.draft) { S.draft = null; S.sel.clear(); } return; }
+  if (S.draft && S.draft.gameId === g.gameId && S.draft.turnNo === g.turnNo) return;
+  const hd = hand(), t = tableOf(g);
+  const r = S.restore; S.restore = null;
+  const back = restoredDraft(r, g, hd, t);
+  if (back) { S.draft = back; S.sel.clear(); return; }
+  S.draft = { gameId: g.gameId, turnNo: g.turnNo, startTable: t.map(s => s.slice()), table: t.map(s => s.slice()), startHand: hd.slice(), rack: hd.slice() };
+  S.sel.clear();
+}
+/* A half-finished turn kept across a page update (window.claude.hot), used only if it still fits the saved game exactly. */
+function restoredDraft(r, g, hd, t) {
+  try {
+    if (!r || r.gameId !== g.gameId || r.turnNo !== g.turnNo) return null;
+    const same = (a, b) => a.length === b.length && a.slice().sort().join() === b.slice().sort().join();
+    if (!Array.isArray(r.startHand) || !same(cleanIds(r.startHand), hd)) return null;
+    if (JSON.stringify(r.startTable) !== JSON.stringify(t)) return null;
+    const tbl = cleanTable(r.table), rack = cleanIds(r.rack);
+    if (!tbl || rack.length !== (r.rack || []).length || !rack.every(id => hd.includes(id))) return null;
+    const played = hd.filter(id => !rack.includes(id));
+    if (!same(tbl.flat(), t.flat().concat(played))) return null;
+    return { gameId: g.gameId, turnNo: g.turnNo, startTable: t.map(s => s.slice()), table: tbl, startHand: hd.slice(), rack };
+  } catch (e) { return null; }
+}
+function result(g) {
+  if (!g || g.status !== 'over' || !Array.isArray(g.seats)) return null;
+  const [a, b] = g.seats;
+  const rv = g.reveal || {};
+  const ra = Array.isArray(rv[a]) ? cleanIds(rv[a]) : null;
+  const rb = Array.isArray(rv[b]) ? cleanIds(rv[b]) : null;
+  let w = g.winner || null, decided = !!w;
+  if (!w && ra && rb) { const sa = sum(ra), sb = sum(rb); w = sa < sb ? a : sb < sa ? b : null; decided = true; }
+  const loser = w ? (w === a ? b : a) : null;
+  const lr = loser ? (loser === a ? ra : rb) : null;
+  const wr = w ? (w === a ? ra : rb) : null;
+  const pts = lr ? Math.max(0, sum(lr) - (wr ? sum(wr) : 0)) : null;
+  return { w, decided, loser, pts };
+}
+function tally() {
+  const g = S.G;
+  if (!g || !Array.isArray(g.seats) || g.seats.length < 2) return null;
+  const H = Array.isArray(g.history) ? g.history.slice() : [];
+  const r = result(g);
+  if (r && r.decided) H.push({ w: r.w, p: r.pts });
+  const t = {};
+  for (const k of g.seats) t[k] = { w: 0, p: 0 };
+  for (const e of H) if (e && t[e.w]) { t[e.w].w++; t[e.w].p += typeof e.p === 'number' ? e.p : 0; }
+  return t;
+}
+function meldSum() {
+  const d = S.draft;
+  if (!d) return 0;
+  const st = new Set(d.startTable.flat());
+  let v = 0;
+  for (const s of d.table) if (!s.some(id => st.has(id)) && setOk(s)) v += setValue(s);
+  return v;
+}
+function checkDraft() {
+  const d = S.draft;
+  if (d.startHand.length - d.rack.length < 1) return 'Leg minstens één steen uit je rek, of pak een steen.';
+  const bad = d.table.filter(s => !setOk(s)).length;
+  if (bad) return bad === 1 ? 'Eén reeks klopt nog niet. Die heeft een rode stippellijn.' : `${bad} reeksen kloppen nog niet. Ze hebben een rode stippellijn.`;
+  if (!melded()) {
+    const st = new Set(d.startTable.flat());
+    const keys = new Set(d.startTable.map(s => s.slice().sort().join(',')));
+    for (const s of d.table) {
+      if (s.some(id => st.has(id)) && !keys.has(s.slice().sort().join(','))) return 'Bij je eerste keer uitkomen mag je de stenen op tafel nog niet gebruiken. Maak nieuwe reeksen met alleen je eigen stenen.';
+    }
+    const v = meldSum();
+    if (v < 30) return `Je eerste keer uitkomen moet samen minstens 30 punten zijn. Nu is het ${v}.`;
+  }
+  return null;
+}
+function maybeReveal() {
+  const g = S.G;
+  if (!g || g.status !== 'over' || seatIdx() < 0 || !gameRef) return;
+  if (PASS) {
+    if (S.revealSent === g.gameId) return;
+    const rv = {};
+    for (const k of g.seats) if (!(g.reveal && Array.isArray(g.reveal[k]))) rv[k] = ownedBy(k);
+    if (!Object.keys(rv).length) return;
+    S.revealSent = g.gameId;
+    gameRef.update({ reveal: rv }).catch(() => {});
+    return;
+  }
+  if (g.reveal && Array.isArray(g.reveal[S.key])) return;
+  if (S.revealSent === g.gameId) return;
+  const hd = hand();
+  if (!hd) return;
+  S.revealSent = g.gameId;
+  gameRef.update({ reveal: { [S.key]: ownedAll(hd) } }).catch(() => {});
+}
+/* A tile the other player swapped to you: add it to your own rack, then clear the hand-over slot. */
+async function applyIncoming() {
+  const g = S.G, t = inOf(S.key), hd = hand();
+  if (!g || !t || !hd || seatIdx() < 0 || S.inBusy || !gameRef) return;
+  if (PASS && S.view !== 'play') return;
+  const sw = g.swap && typeof g.swap === 'object' ? g.swap : {};
+  const tag = g.gameId + ':' + t + ':' + (sw.at || '');
+  if (S.inDone === tag) return;
+  S.inBusy = true; S.inDone = tag;
+  try {
+    if (!hd.includes(t)) {
+      const d = S.draft;
+      if (d && d.gameId === g.gameId && !d.startHand.includes(t)) { d.startHand.push(t); d.rack.push(t); }
+      if (!(await saveRack(g.gameId, hd.concat(t)))) { S.inDone = null; return; }
+      S.newTile = t;
+      if (sw.to === S.key && sw.byGave === t && typeof sw.toGave === 'string' && TILE_RE.test(sw.toGave))
+        flash(`Ruil! ${nameOf(sw.by)} legde ook een dubbele dicht. Je gaf ${tileName(sw.toGave)} en kreeg ${tileName(t)}.`, 'hint');
+      else flash(`Ruil! Je kreeg ${tileName(t)}.`, 'hint');
+    }
+    await tryWrite(() => gameRef.update({ dblIn: { [S.key]: null } }));
+  } catch (e) { S.inDone = null; }
+  finally { S.inBusy = false; render(); }
+}
+function onGame() {
+  const g = S.G;
+  if (PASS && g) {
+    if (g.status === 'over') S.view = 'after';
+    else if (g.status === 'playing' && S.view === 'play' && g.turn !== seatIdx()) S.view = 'after';
+  }
+  ensureDraft();
+  const tk = g ? g.gameId + ':' + g.turnNo : '';
+  if (tk !== S.lastTurnKey) {
+    const had = S.lastTurnKey;
+    S.lastTurnKey = tk;
+    if (had && myTurn()) turnAlert();
+  }
+  juryCheck(g);
+  rainbowCheck(g);
+  applyIncoming();
+  healCheck();
+  maybeReveal();
+  if (g && g.status === 'over' && seatIdx() >= 0 && S.overShown !== g.gameId) { S.overShown = g.gameId; S.sheet = 'over'; }
+  pushPresence();
+  render();
+  setTitle();
+}
+
+/* ---------- actions ---------- */
+async function saveRack(gameId, tiles) {
+  S.rack = { gameId, tiles };
+  for (let i = 0; i < 4; i++) {
+    try { await rackRef.set({ gameId, tiles }); return true; }
+    catch (e) { if (e && e.code === 'invalid_argument') break; await sleep(500 + Math.random() * 700); }
+  }
+  flash('Je rek kon niet worden opgeslagen. Laat deze pagina open en controleer je verbinding.', 'bad');
+  return false;
+}
+async function commit(patch, newRack) {
+  const g = S.G;
+  S.busy = true; render();
+  const prev = S.rack;
+  S.rack = { gameId: g.gameId, tiles: newRack };
+  try { await tryWrite(() => gameRef.update(patch)); }
+  catch (e) { S.rack = prev; S.busy = false; flash(writeErr(e), 'bad'); return false; }
+  await saveRack(g.gameId, newRack);
+  S.busy = false; S.sel.clear(); S.msg = null;
+  render();
+  return true;
+}
+async function play() {
+  const g = S.G, d = S.draft;
+  if (!myTurn() || !d || S.busy || g.turnNo !== d.turnNo) return;
+  const err = checkDraft();
+  if (err) { flash(err, 'bad'); return; }
+  const played = d.startHand.filter(id => !d.rack.includes(id));
+  const newRack = d.rack.slice();
+  const left = newRack.length + extras(S.key);
+  const report = playReport(g, d, played, left);
+  const patch = {
+    table: d.table.map(s => arrange(s)), counts: { [S.key]: left }, melded: { [S.key]: true },
+    turn: 1 - g.turn, turnNo: g.turnNo + 1, passes: 0, last: { key: S.key, kind: 'play', n: played.length, ids: played },
+    streak: { [S.key]: 0 }
+  };
+  if (!left) { patch.status = 'over'; patch.winner = S.key; patch.reveal = { [S.key]: [] }; patch.ended = Date.now(); }
+  if (!(await commit(patch, newRack))) return;
+  runJury(report);
+  if (left && !newRack.length) flash('Je rek is leeg, maar je dichte steen telt nog mee. Pak hem je volgende beurt terug om hem te leggen.', 'hint');
+}
+async function draw() {
+  const g = S.G;
+  if (!myTurn() || S.busy) return;
+  const hd = hand();
+  const pool = Array.isArray(g.pool) ? cleanIds(g.pool) : [];
+  const streak = streakOf(S.key) + 1;
+  if (!pool.length) {
+    const passes = (g.passes || 0) + 1;
+    const patch = { turn: 1 - g.turn, turnNo: g.turnNo + 1, passes, last: { key: S.key, kind: 'pass', n: 0, ids: [] }, streak: { [S.key]: streak } };
+    if (passes >= 2) { patch.status = 'over'; patch.winner = null; patch.reveal = { [S.key]: ownedAll(hd) }; patch.ended = Date.now(); }
+    if (await commit(patch, hd.slice())) runJury(drawReport(g, 'pass', streak, hd.length + extras(S.key), 0));
+    return;
+  }
+  const t = pool.pop();
+  const newRack = hd.concat(t);
+  const left = newRack.length + extras(S.key);
+  S.busy = true; render();
+  if (!(await saveRack(g.gameId, newRack))) { S.busy = false; render(); return; }
+  try {
+    await tryWrite(() => gameRef.update({ pool, counts: { [S.key]: left }, turn: 1 - g.turn, turnNo: g.turnNo + 1, passes: 0,
+      last: { key: S.key, kind: 'draw', n: 0, ids: [] }, streak: { [S.key]: streak } }));
+  } catch (e) { S.busy = false; flash(writeErr(e), 'bad'); return; }
+  S.newTile = t; S.busy = false; S.sel.clear(); S.msg = null;
+  render();
+  runJury(drawReport(g, 'draw', streak, left, pool.length));
+}
+function streakOf(k) { const v = S.G && S.G.streak && S.G.streak[k]; return typeof v === 'number' && v > 0 ? v : 0; }
+async function putDouble(id) {
+  const g = S.G, d = S.draft;
+  if (!canPutDouble() || !d.rack.includes(id) || !d.rack.includes(twin(id))) return;
+  const hd = hand();
+  if (!hd || !hd.includes(id)) return;
+  const opp = oppKey();
+  const theirs = opp ? dblOf(opp) : null;
+  const swap = !!theirs && !hd.includes(theirs);
+  const prevOut = g.swapOut && Array.isArray(g.swapOut[S.key]) ? cleanIds(g.swapOut[S.key]) : [];
+  const patch = swap
+    ? { dbl: { [S.key]: null, [opp]: null }, dblIn: { [opp]: id, [S.key]: theirs }, swapOut: { [S.key]: prevOut.concat(id) },
+        swap: { at: Date.now(), by: S.key, to: opp, byGave: id, toGave: theirs } }
+    : { dbl: { [S.key]: id } };
+  S.busy = true; S.sel.clear(); render();
+  try { await tryWrite(() => gameRef.update(patch)); }
+  catch (e) { S.busy = false; flash(writeErr(e), 'bad'); return; }
+  if (S.draft === d) { d.startHand = d.startHand.filter(x => x !== id); d.rack = d.rack.filter(x => x !== id); }
+  /* In a swap the tile you get arrives through the hand-over slot (applyIncoming), which also saves your rack
+     without the tile you gave (that one is filtered out via swapOut). Without a swap, save the rack here. */
+  if (!swap) { const now = hand(); if (now) await saveRack(g.gameId, now.filter(x => x !== id)); }
+  S.busy = false;
+  if (swap) flash(`Ruil! ${nameOf(opp)} had al een dubbele dicht liggen. Je gaf ${tileName(id)} en krijgt ${tileName(theirs)}.`, 'hint');
+  else flash(`${cap1(tileName(id))} ligt dicht naast je rek. Legt ${nameOf(opp)} ook een dubbele dicht, dan ruilen jullie.`, 'hint');
+  pushPresence();
+  applyIncoming();
+}
+async function takeBack() {
+  const g = S.G, d = S.draft, t = dblOf(S.key);
+  if (!myTurn() || !d || S.busy || !t) return;
+  const hd = hand();
+  if (!hd) return;
+  S.busy = true; S.sheet = null; render();
+  if (!(await saveRack(g.gameId, hd.includes(t) ? hd.slice() : hd.concat(t)))) { S.busy = false; render(); return; }
+  try { await tryWrite(() => gameRef.update({ dbl: { [S.key]: null } })); }
+  catch (e) { S.busy = false; flash(writeErr(e), 'bad'); return; }
+  if (S.draft === d && !d.startHand.includes(t)) { d.startHand.push(t); d.rack.push(t); }
+  S.busy = false; S.newTile = t;
+  render(); pushPresence();
+}
+async function newGame() {
+  if (PASS) return passNewGame();
+  if (S.busy || !gameRef) return;
+  const name = myName();
+  if (!name) { flash('Vul eerst je naam in.', 'bad'); focusName(); return; }
+  if (S.canWrite === false) { flash(NO_WRITE, 'bad'); return; }
+  store.set('rc-name', name);
+  const prev = S.G;
+  const pool = shuffle(allTiles());
+  const mine = pool.splice(0, 14);
+  const history = prev && Array.isArray(prev.history) ? prev.history.slice(-99) : [];
+  const r = result(prev);
+  if (r && r.decided) history.push({ w: r.w || null, p: r.pts });
+  const names = Object.assign({}, prev && prev.names ? prev.names : {}, { [S.key]: name });
+  const gameId = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const doc = {
+    v: 1, gameId, status: 'waiting', seats: [S.key], names, counts: { [S.key]: 14 }, melded: {}, reveal: {},
+    turn: 0, turnNo: 0, pool, table: [], passes: 0, last: null, winner: null, history, created: Date.now(),
+    dbl: {}, dblIn: {}, swapOut: {}, swap: null, streak: {}, jury: null
+  };
+  S.busy = true; S.sheet = null; render();
+  const prevRack = S.rack;
+  S.rack = { gameId, tiles: mine }; S.newTile = null;
+  try { await tryWrite(() => gameRef.set(doc)); }
+  catch (e) { S.rack = prevRack; S.busy = false; flash(writeErr(e), 'bad'); return; }
+  await saveRack(gameId, mine);
+  S.busy = false; render();
+}
+async function join() {
+  const g = S.G;
+  if (!g || g.status !== 'waiting' || !Array.isArray(g.seats) || g.seats.length >= 2 || g.seats.includes(S.key) || S.busy) return;
+  const name = myName();
+  if (!name) { flash('Vul eerst je naam in.', 'bad'); focusName(); return; }
+  if (S.canWrite === false) { flash(NO_WRITE, 'bad'); return; }
+  store.set('rc-name', name);
+  const pool = cleanIds(g.pool);
+  const mine = pool.splice(0, 14);
+  const turn = Math.random() < 0.5 ? 0 : 1;
+  S.busy = true; render();
+  const prevRack = S.rack;
+  S.rack = { gameId: g.gameId, tiles: mine }; S.newTile = null;
+  try {
+    await tryWrite(() => gameRef.update({
+      seats: g.seats.concat(S.key), names: { [S.key]: name }, counts: { [S.key]: 14 }, pool,
+      status: 'playing', turn, turnNo: 1, last: { kind: 'start', key: null, n: 0, ids: [] }
+    }));
+  } catch (e) { S.rack = prevRack; S.busy = false; flash(writeErr(e), 'bad'); return; }
+  await saveRack(g.gameId, mine);
+  S.busy = false; render();
+}
+function tapTile(id, where) {
+  const d = S.draft;
+  if (!myTurn() || !d) return;
+  if (where === 'table' && !melded() && !d.startHand.includes(id)) {
+    flash('Pas na je eerste keer uitkomen mag je ook stenen op tafel verschuiven.', 'hint');
+    return;
+  }
+  if (S.sel.has(id)) S.sel.delete(id); else S.sel.add(id);
+  S.msg = null;
+  render();
+}
+function moveTo(target) {
+  const d = S.draft;
+  if (!myTurn() || !d || !S.sel.size) return;
+  let ids = [...S.sel];
+  if (target === 'rack') {
+    ids = ids.filter(id => d.startHand.includes(id) && !d.rack.includes(id));
+    if (!ids.length) { S.sel.clear(); render(); return; }
+  }
+  const idx = (target === 'new' || target === 'rack') ? -1 : parseInt(target, 10);
+  if (idx >= 0) {
+    const s = d.table[idx];
+    if (!s) return;
+    if (!melded()) { const st = new Set(d.startTable.flat()); if (s.some(id => st.has(id))) return; }
+  }
+  const rm = new Set(ids);
+  d.rack = d.rack.filter(id => !rm.has(id));
+  d.table = d.table.map(s => s.filter(id => !rm.has(id)));
+  if (target === 'rack') d.rack.push(...ids);
+  else if (target === 'new') d.table.push(arrange(ids));
+  else d.table[idx] = arrange(d.table[idx].concat(ids));
+  d.table = d.table.filter(s => s.length);
+  S.sel.clear(); S.msg = null;
+  render(); pushPresence();
+}
+function resetDraft() {
+  const d = S.draft;
+  if (!d) return;
+  d.table = d.startTable.map(s => s.slice());
+  d.rack = d.startHand.slice();
+  S.sel.clear(); S.msg = null;
+  render(); pushPresence();
+}
+async function saveName() {
+  const n = (S.renameDraft || '').trim().slice(0, 20);
+  if (!n) { flash('Vul een naam in.', 'bad'); return; }
+  S.nameDraft = n; store.set('rc-name', n);
+  S.sheet = null; render();
+  if (seatIdx() >= 0 && gameRef) {
+    try { await tryWrite(() => gameRef.update({ names: { [S.key]: n } })); }
+    catch (e) { flash(writeErr(e), 'bad'); }
+  }
+}
+
+/* ---------- Jury Claude ---------- */
+const pick = a => a[Math.floor(Math.random() * a.length)];
+let juryCur = null, juryTimer = null;
+function realName(k) {
+  const n = S.G && S.G.names && S.G.names[k];
+  return (typeof n === 'string' && n.trim()) ? n.trim().slice(0, 20) : (k === S.key ? (myName() || 'Speler') : 'Tegenspeler');
+}
+function playReport(g, d, played, left) {
+  const where = new Map();
+  d.startTable.forEach((s, i) => s.forEach(id => where.set(id, i)));
+  const mine = new Set(played), spread = new Map();
+  let newSets = 0, extended = 0, rearranged = false;
+  d.table.forEach((s, j) => {
+    const from = new Set(s.filter(id => where.has(id)).map(id => where.get(id)));
+    if (!from.size) newSets++;
+    else if (s.some(id => mine.has(id))) extended++;
+    if (from.size > 1) rearranged = true;
+    for (const i of from) { if (!spread.has(i)) spread.set(i, new Set()); spread.get(i).add(j); }
+  });
+  for (const v of spread.values()) if (v.size > 1) rearranged = true;
+  const opp = oppKey();
+  return {
+    kind: 'play', turnNo: g.turnNo + 1, name: realName(S.key), opp: opp ? realName(opp) : 'de tegenspeler',
+    tiles: played.map(tileName), n: played.length, pts: played.filter(id => !isJ(id)).reduce((t, id) => t + num(id), 0),
+    newSets, extended, rearranged, first: !melded(), meld: melded() ? 0 : meldSum(), joker: played.some(isJ),
+    left, oppLeft: opp ? count(opp) : 0, pool: Array.isArray(g.pool) ? g.pool.length : 0, win: !left
+  };
+}
+function drawReport(g, kind, streak, left, poolLeft) {
+  const opp = oppKey();
+  return { kind, turnNo: g.turnNo + 1, name: realName(S.key), opp: opp ? realName(opp) : 'de tegenspeler',
+    streak, melded: melded(), left, oppLeft: opp ? count(opp) : 0, pool: poolLeft, win: false };
+}
+function juryPrompt(r) {
+  const prev = S.G && S.G.jury ? emojiOnly(S.G.jury.text).join('') : '';
+  const L = [`Je bent Jury Claude: de vaste jury bij een potje Rummy Cup (Rummikub) tussen ${r.name} en ${r.opp}. Je beoordeelt de beurt die ${r.name} net heeft gespeeld.`, '', 'De beurt:'];
+  if (r.kind === 'play') {
+    L.push(`- ${r.name} legde ${r.n} ${r.n === 1 ? 'steen' : 'stenen'}: ${r.tiles.join(', ')} (samen ${r.pts} punten${r.joker ? ', de joker niet meegeteld' : ''}).`);
+    if (r.first) L.push(`- Dit was de eerste keer uitkomen, met ${r.meld} punten (minimaal 30 nodig).`);
+    L.push(`- Nieuwe reeksen gelegd: ${r.newSets}. Aangelegd bij reeksen die al op tafel lagen: ${r.extended}.`);
+    L.push(r.rearranged ? '- Er zijn reeksen op tafel omgebouwd: stenen verschoven tussen reeksen.' : '- Er is niets omgebouwd op tafel.');
+    if (r.joker) L.push('- Er zat een joker bij.');
+  } else if (r.kind === 'draw') {
+    L.push(`- ${r.name} legde niets en pakte een steen uit de pot.`);
+    if (r.streak > 1) L.push(`- Dat is al de ${r.streak}e keer op rij dat ${r.name} alleen een steen pakt.`);
+    if (!r.melded) L.push(`- ${r.name} is nog niet uitgekomen (de eerste keer leggen moet samen minstens 30 punten zijn).`);
+  } else {
+    L.push(`- ${r.name} paste, omdat de pot leeg is.`);
+  }
+  L.push(`- Stenen over: ${r.name} ${r.left}, ${r.opp} ${r.oppLeft}. In de pot: ${r.pool}.`);
+  if (r.win) L.push(`- Het rek van ${r.name} is nu leeg: ${r.name} wint dit spel.`);
+  if (prev) L.push('', `Je vorige reactie was ${prev}. Kies nu iets anders.`);
+  L.push('', 'Je reactie:',
+    '- Alleen 1 tot 3 emoji, geen woorden, letters of cijfers. De emoji vatten je oordeel samen: grappig, kritisch en licht sarcastisch, als een jurylid dat al veel te veel heeft gezien. Denk aan 🥱 🙄 🤏 👏 🔥 🧐 😬 🐌 🫠 💅 🤌 🧠.',
+    r.kind === 'play'
+      ? '- Geef ook een cijfer van 1 tot 10 (halve punten mogen). Wees streng: een 8 of hoger alleen voor een echt sterke beurt, zoals veel stenen kwijt, slim ombouwen of winnen. Eén steen aanleggen is hooguit een 5.'
+      : '- Geen cijfer (null). Wees droog en vooral niet aanmoedigend: dit was geen prestatie.',
+    '', 'Antwoord met alleen JSON, bijvoorbeeld: {"cijfer": 6.5, "emoji": "🤏👏"}');
+  return L.join('\n');
+}
+async function askJury(r) {
+  if (S.aiOff || !sampleP) return null;
+  const sample = await sampleP;
+  if (!sample) return null;
+  try {
+    const out = await sample.json(juryPrompt(r), { modelTier: 'quick', cache: false });
+    const emo = emojiOnly(out && (out.emoji || out.tekst)).slice(0, 3);
+    if (!emo.length) return null;
+    const text = emo.join('');
+    const c = out.cijfer;
+    const score = (typeof c === 'number' && isFinite(c)) ? Math.max(1, Math.min(10, Math.round(c * 2) / 2)) : null;
+    return { text, score, ai: true };
+  } catch (e) {
+    if (e && e.code === 'not_granted') S.aiOff = true;
+    return null;
+  }
+}
+/* Split into user-visible characters and keep only emoji (a flag or a family counts as one). */
+function emojiOnly(v) {
+  const str = typeof v === 'string' ? v : '';
+  let parts;
+  try { parts = [...new Intl.Segmenter('nl', { granularity: 'grapheme' }).segment(str)].map(x => x.segment); }
+  catch (e) { parts = Array.from(str); }
+  return parts.filter(g => /\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(g) && !/[\p{L}\p{N}]/u.test(g.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, ''))).slice(0, 4);
+}
+function fallbackVerdict(r) {
+  const out = (score, sets) => ({ score, text: pick(sets).join('') });
+  if (r.kind === 'draw') {
+    if (r.streak >= 3) return out(null, [['🐌', '🐌', '🐌'], ['💤', '💤'], ['🦥'], ['🙈']]);
+    if (!r.melded) return out(null, [['⏳'], ['🔍', '🥱'], ['🫠']]);
+    return out(null, [['🥱'], ['🙄'], ['🤷'], ['😐'], ['🐌'], ['💤'], ['🫤']]);
+  }
+  if (r.kind === 'pass') return out(null, [['🤷'], ['🫙', '🤷']]);
+  let sc = 3.5 + r.n * 0.7 + (r.rearranged ? 1.5 : 0) + (r.newSets ? 0.5 : 0) + (r.first ? 0.5 : 0) - (r.joker && r.n <= 3 ? 0.5 : 0);
+  if (r.win) sc = Math.max(sc, 9);
+  sc = Math.max(3, Math.min(9.5, Math.round(sc * 2) / 2));
+  if (r.win) return out(sc, [['🏆', '👑', '🎉'], ['🥇', '🌈'], ['👑', '😤']]);
+  if (r.first) return out(sc, [['🐣'], ['⏰', '✅'], ['🫡']]);
+  if (r.joker && r.n <= 3) return out(sc, [['🃏', '🙄'], ['🃏', '💅']]);
+  if (r.n === 1) return out(sc, [['🤏'], ['👏', '🤏'], ['😴']]);
+  if (r.rearranged) return out(sc, [['🧠', '🔀'], ['🤹'], ['🧐', '👌']]);
+  if (sc >= 7.5) return out(sc, [['🔥', '👏'], ['😮', '🔥'], ['💪', '😤']]);
+  return out(sc, [['👌'], ['🙂', '👍'], ['🆗'], ['😐', '👏']]);
+}
+async function runJury(r) {
+  const g = S.G;
+  const base = { id: 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), gameId: g ? g.gameId : null,
+    turnNo: r.turnNo, key: S.key, kind: r.kind === 'play' ? 'play' : 'draw', win: !!r.win, at: Date.now() };
+  let v = await askJury(r).catch(() => null);
+  const fb = fallbackVerdict(r);
+  if (!v) v = fb;
+  const score = r.kind === 'play' ? (v.score != null ? v.score : fb.score) : null;
+  const jury = Object.assign({}, base, { score, text: v.text, ai: !!v.ai, pending: false });
+  const cur = S.G;
+  if (!cur || cur.gameId !== base.gameId || cur.turnNo > base.turnNo) return;
+  showJury(jury);
+  try { if (gameRef) await tryWrite(() => gameRef.update({ jury })); } catch (e) {}
+}
+function hideJury() {
+  clearTimeout(juryTimer); juryCur = null;
+  $('#jury').hidden = true; $('#jury').replaceChildren();
+}
+/* One to three emoji stickers, spread over the upper half of the screen, each slightly tilted. */
+function showJury(j) {
+  const ems = emojiOnly(j.text).slice(0, 3);
+  if (!ems.length) return;
+  S.juryLast = j.id; store.set('rc-jury', j.id);
+  if (document.getElementById('rainbow')) return;
+  const el = $('#jury');
+  clearTimeout(juryTimer);
+  juryCur = j;
+  const W = window.innerWidth || 390, H = window.innerHeight || 780;
+  const big = j.kind === 'play';
+  const sz = Math.round(Math.min(W, 560) * (big ? 0.24 : 0.18));
+  const gap = Math.min(W * 0.27, sz * 1.25), n = ems.length;
+  const stay = big ? 2.6 : 1.9;
+  el.replaceChildren(...ems.map((em, i) => {
+    const x = W / 2 + (i - (n - 1) / 2) * gap + (Math.random() - 0.5) * W * 0.06;
+    const y = H * (0.3 + Math.random() * 0.14) + (i % 2 ? sz * 0.25 : 0);
+    const d = i * 0.2;
+    return E('span', { class: 'stk', style: `left:${x.toFixed(0)}px;top:${y.toFixed(0)}px;--sz:${sz}px;--rot:${(Math.random() * 30 - 15).toFixed(0)}deg;--d:${d.toFixed(2)}s;--out:${(d + stay).toFixed(2)}s` }, em);
+  }));
+  el.hidden = false;
+  el.setAttribute('aria-label', 'Jury Claude: ' + ems.join(' '));
+  juryTimer = setTimeout(() => { if (juryCur === j) hideJury(); }, ((n - 1) * 0.2 + stay + 0.6) * 1000);
+}
+function juryCheck(g) {
+  const first = !S.juryReady;
+  if (g) S.juryReady = true;
+  const j = g && g.jury;
+  if (!j || typeof j !== 'object' || typeof j.id !== 'string' || !emojiOnly(j.text).length) return;
+  if (j.gameId !== g.gameId || j.turnNo !== g.turnNo) return;
+  if (j.id === (S.juryLast || store.get('rc-jury'))) return;
+  if (first && !(Date.now() - (+j.at || 0) < 15 * 60e3)) { S.juryLast = j.id; store.set('rc-jury', j.id); return; }
+  showJury({ id: j.id, kind: j.kind === 'play' ? 'play' : 'draw', key: j.key, turnNo: j.turnNo, win: !!j.win,
+    score: typeof j.score === 'number' ? Math.max(1, Math.min(10, j.score)) : null, text: emojiOnly(j.text).join(''), pending: false });
+}
+
+/* ---------- winner rainbow ---------- */
+const RB_BANDS = ['❤️', '🧡', '💛', '💚', '💙', '💜'];
+const RB_FALL = ['🎉', '🥳', '✨', '🏆', '🎊', '⭐', '🌈', '🍾', '👑'];
+function showRainbow(who) {
+  const old = document.getElementById('rainbow');
+  if (old) old.remove();
+  hideJury();
+  const W = window.innerWidth || 390, H = window.innerHeight || 780;
+  const R = Math.min(W * 0.44, 200), fs = Math.max(16, Math.round(R / 8.5)), step = fs * 1.05;
+  const cx = W / 2, cy = Math.min(H * 0.42, R + 160);
+  const root = E('div', { id: 'rainbow', 'aria-hidden': 'true' });
+  RB_BANDS.forEach((em, b) => {
+    const r = R - b * step, n = Math.max(5, Math.round(Math.PI * r / fs));
+    for (let k = 0; k <= n; k++) {
+      const t = k / n, a = Math.PI * (1 - t);
+      root.append(E('span', { class: 'rb-e', style: `left:${(cx + Math.cos(a) * r).toFixed(1)}px;top:${(cy - Math.sin(a) * r).toFixed(1)}px;--fs:${fs}px;animation-delay:${(t * 1.1 + b * 0.07).toFixed(2)}s` }, em));
+    }
+  });
+  root.append(E('span', { class: 'rb-e', style: `left:${cx}px;top:${(cy - fs * 0.9).toFixed(1)}px;--fs:${Math.round(fs * 2.4)}px;animation-delay:1.2s` }, '🏆'));
+  root.append(E('div', { class: 'rb-name', style: `top:${(cy + fs * 0.6).toFixed(1)}px` }, `${who} wint!`));
+  for (let i = 0; i < 28; i++) root.append(E('span', { class: 'rb-fall',
+    style: `left:${(Math.random() * 96).toFixed(1)}%;animation-duration:${(2.6 + Math.random() * 2).toFixed(2)}s;animation-delay:${(1.3 + Math.random() * 2).toFixed(2)}s;--r:${(Math.random() * 720 - 360).toFixed(0)}deg` }, pick(RB_FALL)));
+  document.body.append(root);
+  setTimeout(() => root.classList.add('fade'), 6500);
+  setTimeout(() => root.remove(), 7200);
+}
+/* Show it once per game: when the game ends while this page is open, or on opening it within a few minutes of the end. */
+function rainbowCheck(g) {
+  if (!g) return;
+  if (g.status === 'playing') { S.sawPlaying = g.gameId; return; }
+  if (g.status !== 'over' || S.rainbowFor === g.gameId) return;
+  const r = result(g);
+  if (!r || !r.w) return;
+  S.rainbowFor = g.gameId;
+  const live = S.sawPlaying === g.gameId;
+  const recent = typeof g.ended === 'number' && Date.now() - g.ended < 3 * 60e3 && store.get('rc-rainbow') !== g.gameId;
+  if (!live && !recent) return;
+  store.set('rc-rainbow', g.gameId);
+  showRainbow(!PASS && r.w === S.key ? 'Jij' : realName(r.w));
+}
+
+/* ---------- rendering ---------- */
+function turnText() {
+  const g = S.G;
+  if (S.noDb) return 'Offline';
+  if (!S.ready) return 'Verbinden';
+  if (!g) return 'Geen spel';
+  if (g.status === 'waiting') return 'Wachten';
+  if (g.status === 'over') return 'Afgelopen';
+  const k = Array.isArray(g.seats) ? g.seats[g.turn] : null;
+  if (PASS) return `Beurt van ${realName(k)}`;
+  if (myTurn() || k === S.key) return 'Jouw beurt';
+  return `${nameOf(k)} is aan zet`;
+}
+function renderTop() {
+  const g = S.G, i = seatIdx();
+  const left = E('div', { class: 'opp' });
+  if (g && Array.isArray(g.seats) && g.seats.length) {
+    if (i >= 0) {
+      const ok = oppKey();
+      if (ok) left.append(
+        E('div', { class: 'opp-name' }, PASS ? null : E('span', { class: 'dot' + (oppOnline() ? ' on' : ''), title: oppOnline() ? 'Online' : 'Niet online' }), E('span', { class: 'nm' }, nameOf(ok))),
+        E('div', { class: 'opp-sub' }, dblOf(ok)
+          ? [E('span', { class: 'tile-back', 'aria-hidden': 'true' }), `${Math.max(0, count(ok) - 1)} + 1 dicht`]
+          : tilesWord(count(ok)) + ' in rek'));
+      else left.append(E('div', { class: 'opp-name' }, 'Nog geen tegenspeler'), E('div', { class: 'opp-sub' }, 'Deel deze pagina'));
+    } else {
+      left.append(E('div', { class: 'opp-name' }, E('span', { class: 'nm' }, g.seats.map(nameOf).join(' – '))), E('div', { class: 'opp-sub' }, 'Je kijkt mee'));
+    }
+  } else left.append(E('div', { class: 'brand' }, 'Rummy Cup'));
+  const right = E('div', { class: 'top-r' },
+    g && Array.isArray(g.pool) && g.status !== 'waiting' ? E('div', { class: 'pot', title: 'Stenen in de pot' }, E('span', { class: 'pot-n' }, String(g.pool.length)), E('span', { class: 'pot-l' }, 'pot')) : null,
+    E('button', { class: 'icon-btn', 'data-act': 'menu', 'aria-label': 'Menu', html: MENU }));
+  $('#top').replaceChildren(left, E('div', { class: 'pill' + (myTurn() || (PASS && S.view === 'handoff' && S.G && S.G.status === 'playing') ? ' mine' : '') }, turnText()), right);
+}
+const card = kids => E('section', { class: 'card' }, kids);
+const decoGroup = () => E('div', { class: 'deco', 'aria-hidden': 'true' }, ['r7a', 'b7a', 'z7a', 'o7a'].map(id => tileEl(id, false)));
+const nameField = id => E('div', { class: 'field' },
+  E('label', { for: id || 'name' }, 'Jouw naam'),
+  E('input', { id: id || 'name', type: 'text', maxlength: '20', autocomplete: 'nickname', placeholder: 'Je naam', value: S.nameDraft }));
+const noWrite = () => S.canWrite === false ? E('p', { class: 'note' }, NO_WRITE) : null;
+const passNames = () => E('div', { class: 'pass-names' }, [0, 1].map(i => E('div', { class: 'field' },
+  E('label', { for: 'pn' + (i + 1) }, `Speler ${i + 1}`),
+  E('input', { id: 'pn' + (i + 1), type: 'text', maxlength: '20', autocomplete: 'off', placeholder: 'Naam', value: S.pn[i] }))));
+function setsView() {
+  const g = S.G;
+  const d = myTurn() ? S.draft : null;
+  const pv = d ? null : livePreview();
+  const tbl = d ? d.table : (pv || tableOf(g));
+  const st = d ? new Set(d.startTable.flat()) : null;
+  const mine = d ? new Set(d.startHand) : null;
+  const recent = new Set(g.last && g.last.kind === 'play' && g.last.key !== S.key && Array.isArray(g.last.ids) ? g.last.ids : []);
+  const out = [];
+  if (pv) out.push(E('div', { class: 'live-badge' }, E('i', { class: 'pulse' }), 'Live'));
+  const wrap = E('div', { class: 'sets' });
+  tbl.forEach((s, i) => {
+    const node = E('div', { class: 'set' + ((d || pv) && !setOk(s) ? ' bad' : '') });
+    for (const id of s) {
+      const t = tileEl(id, !!d);
+      if (d) {
+        t.dataset.act = 'tile'; t.dataset.where = 'table'; t.dataset.id = id;
+        if (S.sel.has(id)) t.classList.add('sel');
+        if (mine.has(id)) t.classList.add('mine');
+      }
+      if (!pv && recent.has(id)) t.classList.add('recent');
+      node.append(t);
+    }
+    if (d && S.sel.size && (melded() || !s.some(id => st.has(id))))
+      node.append(E('button', { class: 'add', 'data-act': 'to', 'data-target': String(i), 'aria-label': 'Leg de gekozen stenen hier aan' }, '+'));
+    wrap.append(node);
+  });
+  if (d && S.sel.size) wrap.append(E('button', { class: 'newset', 'data-act': 'to', 'data-target': 'new' }, '+ Nieuwe reeks'));
+  if (!wrap.children.length) out.push(E('p', { class: 'empty' }, g.status === 'over' ? 'De tafel is leeg.' : 'De tafel is nog leeg. Wie het eerst uitkomt, legt hier de eerste reeksen neer.'));
+  else out.push(wrap);
+  return out;
+}
+function renderTable() {
+  const g = S.G, kids = [];
+  if (S.noDb) kids.push(card([decoGroup(), E('h1', null, 'Rummy Cup'), E('p', null, 'Dit spel heeft een online verbinding nodig. Open deze pagina in de Claude-app of op claude.ai terwijl je bent ingelogd.')]));
+  else if (S.dbErr) kids.push(card([E('h2', null, 'Geen verbinding met het spel'), E('p', null, S.dbErr === 'revoked' ? 'Je hebt geen toegang meer tot dit spel.' : 'Het spel kon niet worden geladen. Sluit de pagina en open hem opnieuw.')]));
+  else if (!S.ready) kids.push(card([decoGroup(), E('h1', null, 'Rummy Cup'), E('p', { class: 'muted' }, S.slow ? 'Het verbinden duurt lang. Controleer je internetverbinding.' : 'Verbinden met het spel…')]));
+  else if (!g && PASS) kids.push(card([decoGroup(), E('h1', null, 'Rummy Cup Samen'),
+    E('p', null, 'Speel met z’n tweeën op dit apparaat. Na je beurt geef je het door. Je stenen blijven verborgen tot de ander ze opvraagt.'),
+    passNames(), E('button', { class: 'btn primary wide', 'data-act': 'newgame', disabled: S.busy }, 'Start spel')]));
+  else if (!g) kids.push(card([decoGroup(), E('h1', null, 'Rummy Cup'),
+    E('p', null, 'Speel met z’n tweeën, ieder op de eigen telefoon. Je ziet alleen je eigen stenen; de tafel delen jullie.'),
+    nameField(), E('button', { class: 'btn primary wide', 'data-act': 'newgame', disabled: S.busy || S.canWrite === false }, 'Nieuw spel starten'), noWrite()]));
+  else if (g.status === 'waiting') {
+    if (seatIdx() >= 0) kids.push(card([E('h2', null, 'Wachten op je tegenspeler'),
+      E('p', null, 'Deel deze pagina met je tegenspeler. Zodra die op Meedoen tikt, begint het spel en wordt geloot wie mag beginnen.'),
+      E('p', { class: 'muted' }, 'Je 14 stenen liggen al in je rek.')]));
+    else kids.push(card([decoGroup(), E('h2', null, `${nameOf(g.seats && g.seats[0])} wil Rummy Cup spelen`),
+      E('p', null, 'Doe mee, dan krijg je 14 stenen en begint het spel.'),
+      nameField(), E('button', { class: 'btn primary wide', 'data-act': 'join', disabled: S.busy || S.canWrite === false }, 'Meedoen'), noWrite()]));
+  } else kids.push(...setsView());
+  $('#table').replaceChildren(...kids);
+}
+function lastText(g) {
+  const L = g.last;
+  if (!L || typeof L !== 'object') return '';
+  const who = L.key === S.key ? 'Je' : realName(L.key);
+  if (L.kind === 'play') { const n = +L.n || 0; return `${who} legde ${tilesWord(n)} neer.`; }
+  if (L.kind === 'draw') return `${who} pakte een steen.`;
+  if (L.kind === 'pass') return `${who} paste, want de pot is leeg.`;
+  if (L.kind === 'start') { const k = g.seats && g.seats[g.turn]; return !PASS && k === S.key ? 'Het spel is begonnen. Jij mag beginnen.' : `Het spel is begonnen. ${realName(k)} mag beginnen.`; }
+  return '';
+}
+function renderStrip() {
+  const st = $('#strip'), g = S.G;
+  const d = myTurn() ? S.draft : null;
+  st.className = 'strip band';
+  if (d && S.sel.size) {
+    const ret = [...S.sel].filter(id => d.startHand.includes(id) && !d.rack.includes(id));
+    st.classList.add('picking');
+    const one = S.sel.size === 1 ? [...S.sel][0] : null;
+    const dblOk = one && canPutDouble() && d.rack.includes(one) && d.rack.includes(twin(one));
+    st.replaceChildren(E('span', { class: 'sel-n' }, `${S.sel.size} gekozen`), E('div', { class: 'strip-btns' },
+      dblOk ? E('button', { class: 'chip', 'data-act': 'dbl', 'data-id': one }, dblOf(oppKey()) ? 'Dicht leggen en ruilen' : 'Dicht opzij') : null,
+      E('button', { class: 'chip', 'data-act': 'to', 'data-target': 'new' }, 'Nieuwe reeks'),
+      ret.length ? E('button', { class: 'chip', 'data-act': 'to', 'data-target': 'rack' }, 'Terug in rek') : null,
+      E('button', { class: 'chip quiet', 'data-act': 'desel' }, 'Wis')));
+    return;
+  }
+  if (S.msg) { st.classList.add(S.msg.kind === 'bad' ? 'bad' : 'hint'); st.replaceChildren(E('span', null, S.msg.text)); return; }
+  if (!g || g.status !== 'playing') {
+    st.replaceChildren(E('span', null, !g ? '' : g.status === 'waiting' ? 'Wachten tot je tegenspeler meedoet.' : 'Het spel is afgelopen.'));
+    return;
+  }
+  if (d) {
+    const parts = [];
+    if (g.last && g.last.key !== S.key) { const lt = lastText(g); if (lt) parts.push(E('span', null, lt)); }
+    if (!melded()) {
+      const v = meldSum();
+      parts.push(E('span', { class: 'meld' }, `Uitkomen ${v}/30`, E('span', { class: 'meld-bar' }, E('span', { class: 'meld-fill' + (v >= 30 ? ' ok' : ''), style: `width:${Math.min(100, v / 30 * 100)}%` }))));
+    }
+    const pairs = canPutDouble() ? doublePairs(d.rack) : [];
+    if (pairs.length) {
+      const opp = oppKey();
+      parts.push(E('span', { class: 'dbl-hint' }, dblOf(opp)
+        ? `${nameOf(opp)} heeft een steen dicht liggen. Tik je dubbele ${tileName(pairs[0])} aan om te ruilen.`
+        : `Je hebt een dubbele ${tileName(pairs[0])}. Tik hem aan om er één dicht opzij te leggen.`));
+    } else if (!parts.length) parts.push(E('span', null, 'Tik stenen aan om ze te kiezen.'));
+    st.replaceChildren(...parts);
+    return;
+  }
+  const pv = livePreview();
+  const k = g.seats && g.seats[g.turn];
+  st.replaceChildren(pv
+    ? E('span', { class: 'live' }, E('i', { class: 'pulse' }), `${nameOf(k)} schuift met stenen`)
+    : E('span', null, lastText(g) || `${nameOf(k)} is aan zet.`));
+}
+function renderDock() {
+  const g = S.G, i = seatIdx(), hd = hand();
+  const d = myTurn() ? S.draft : null;
+  const dock = $('#dock');
+  if (PASS && g && g.status === 'playing' && S.view === 'handoff') {
+    const k = g.seats[g.turn], n = Math.min(count(k), 40);
+    dock.className = 'dock band myturn';
+    dock.replaceChildren(
+      E('div', { class: 'rack rack-hidden', 'aria-label': `De stenen van ${realName(k)} zijn verborgen` }, Array.from({ length: n }, () => E('span', { class: 'tile-back', 'aria-hidden': 'true' }))),
+      E('div', { class: 'acts' }, E('div', { class: 'hand-to' }, `Geef het apparaat aan ${realName(k)}`),
+        E('div', { class: 'acts-r' }, E('button', { class: 'btn primary', 'data-act': 'reveal' }, `Ik ben ${realName(k)}: toon mijn stenen`))));
+    return;
+  }
+  dock.className = 'dock band' + (d ? ' myturn' : '');
+  const rack = E('div', { class: 'rack', 'aria-label': 'Jouw rek' });
+  if (i >= 0 && hd) {
+    const tiles = sortRack(d ? d.rack : hd, S.sort);
+    for (const id of tiles) {
+      const t = tileEl(id, !!d);
+      if (d) { t.dataset.act = 'tile'; t.dataset.where = 'rack'; t.dataset.id = id; if (S.sel.has(id)) t.classList.add('sel'); }
+      if (id === S.newTile) t.classList.add('new');
+      rack.append(t);
+    }
+    if (!tiles.length) rack.append(E('div', { class: 'rack-empty' }, 'Je rek is leeg.'));
+    const down = g && g.status === 'playing' ? dblOf(S.key) : null;
+    if (down) rack.append(E('button', { class: 'tile-back in-rack', 'data-act': 'dblSheet', 'aria-label': `Dichte steen: ${tileName(down)}. Tik voor meer.` }, E('span', null, 'dicht')));
+  } else {
+    let txt = 'Start een spel om stenen te krijgen.';
+    if (S.noDb || !S.ready) txt = 'Je stenen verschijnen hier.';
+    else if (g && i < 0 && g.status !== 'waiting') txt = 'Je kijkt mee. Alleen de spelers zien hun eigen stenen.';
+    else if (g && i < 0) txt = 'Doe mee om je stenen te krijgen.';
+    else if (g && i >= 0 && !S.rackReady) txt = 'Je stenen laden…';
+    else if (g && i >= 0) txt = 'Je stenen zijn op dit apparaat niet gevonden. Start via het menu een nieuw spel.';
+    rack.append(E('div', { class: 'rack-empty' }, txt));
+  }
+  const seg = E('div', { class: 'seg', role: 'group', 'aria-label': 'Rek sorteren' },
+    E('button', { class: 'seg-b' + (S.sort === 'color' ? ' on' : ''), 'data-act': 'sort', 'data-mode': 'color', 'aria-pressed': S.sort === 'color' ? 'true' : 'false' }, 'Kleur'),
+    E('button', { class: 'seg-b' + (S.sort === 'num' ? ' on' : ''), 'data-act': 'sort', 'data-mode': 'num', 'aria-pressed': S.sort === 'num' ? 'true' : 'false' }, '1–13'));
+  let acts = [];
+  if (d) {
+    const played = d.startHand.length - d.rack.length;
+    const changed = played > 0 || JSON.stringify(d.table) !== JSON.stringify(d.startTable);
+    const poolN = Array.isArray(g.pool) ? g.pool.length : 0;
+    acts = [
+      E('button', { class: 'btn ghost', 'data-act': 'reset', disabled: !changed || S.busy }, 'Herstel'),
+      played > 0
+        ? E('button', { class: 'btn primary', 'data-act': 'play', disabled: S.busy }, 'Klaar')
+        : E('button', { class: 'btn primary', 'data-act': 'draw', disabled: S.busy }, poolN ? 'Pak steen' : 'Passen')
+    ];
+  } else if (g && g.status === 'over' && i >= 0) acts = [E('button', { class: 'btn primary', 'data-act': 'newgame', disabled: S.busy }, 'Nieuw spel')];
+  else if (PASS && g && g.status === 'playing' && i >= 0) acts = [E('button', { class: 'btn primary', 'data-act': 'handoff', disabled: S.busy }, `Geef door aan ${realName(g.seats[g.turn])}`)];
+  else if (g && g.status === 'playing' && i >= 0) acts = [E('div', { class: 'wait' }, `${nameOf(g.seats[g.turn])} is aan zet`)];
+  else if (g && g.status === 'waiting' && i >= 0) acts = [E('div', { class: 'wait' }, 'Wachten op je tegenspeler')];
+  dock.replaceChildren(rack, E('div', { class: 'acts' }, (i >= 0 && hd) ? seg : null, E('div', { class: 'acts-r' }, acts)));
+}
+function standEl() {
+  const t = tally();
+  if (!t) return null;
+  return E('div', { class: 'stand' }, E('span', { class: 'stand-l' }, 'Stand'),
+    S.G.seats.map(k => E('span', null, (PASS ? realName(k) : nameOf(k)) + ' ', E('b', null, String(t[k].w)), ` · ${t[k].p} pt`)));
+}
+function overSheet() {
+  const g = S.G, r = result(g);
+  if (!r) return [E('h2', null, 'Spel afgelopen'), E('button', { class: 'btn ghost wide', 'data-act': 'close' }, 'Sluiten')];
+  let title = 'Spel afgelopen';
+  if (PASS && r.w) title = `${realName(r.w)} heeft gewonnen!`;
+  else if (r.w === S.key) title = 'Je hebt gewonnen!';
+  else if (r.w) title = `${nameOf(r.w)} heeft gewonnen`;
+  else if (r.decided) title = 'Gelijkspel';
+  const lines = [];
+  if (!g.winner) lines.push(E('p', null, 'De pot was leeg en niemand kon nog leggen. Wie de minste punten overhoudt, wint.'));
+  if (r.w && r.pts != null) lines.push(E('p', null, !PASS && r.w === S.key ? `Je krijgt ${r.pts} punten.` : `${realName(r.w)} krijgt ${r.pts} punten.`));
+  else lines.push(E('p', { class: 'muted' }, 'De stenen van de ander komen zo binnen…'));
+  const rows = [];
+  for (const k of g.seats) {
+    const rv = g.reveal && cleanIds(g.reveal[k]);
+    if (rv && rv.length) rows.push(E('div', { class: 'reveal' },
+      E('div', { class: 'reveal-h' }, E('span', null, !PASS && k === S.key ? 'Jouw rek' : `Rek van ${realName(k)}`), E('span', null, `${sum(rv)} punten`)),
+      E('div', { class: 'mini' }, sortRack(rv, 'color').map(id => tileEl(id, false)))));
+  }
+  return [E('h2', null, title), ...lines, ...rows, standEl(),
+    E('div', { class: 'sheet-acts' }, E('button', { class: 'btn ghost', 'data-act': 'close' }, 'Sluiten'),
+      seatIdx() >= 0 ? E('button', { class: 'btn primary', 'data-act': 'newgame', disabled: S.busy }, 'Nieuw spel') : null)];
+}
+function rulesSheet() {
+  const ex = (label, ids) => E('div', { class: 'ex' }, E('div', { class: 'grp' }, ids.map(id => tileEl(id, false))), E('span', null, label));
+  return [E('h2', null, 'Spelregels'),
+    E('ul', { class: 'rules' },
+      E('li', null, 'Iedereen begint met 14 stenen. Er wordt geloot wie begint.'),
+      E('li', null, 'Een rij is minstens 3 opeenvolgende getallen in één kleur. Een groep is 3 of 4 dezelfde getallen in verschillende kleuren.'),
+      E('li', null, ex('een rij', ['b4a', 'b5a', 'b6a']), ex('een groep', ['r7a', 'z7a', 'o7a'])),
+      E('li', null, 'Je eerste keer uitkomen doe je met nieuwe reeksen uit je eigen rek, samen minstens 30 punten.'),
+      E('li', null, 'Daarna mag je aanleggen en stenen op tafel verschuiven, zolang aan het eind van je beurt alle reeksen kloppen. Stenen van tafel gaan nooit terug in je rek.'),
+      E('li', null, 'Kun of wil je niets leggen? Pak een steen. Dan is je beurt voorbij.'),
+      E('li', null, 'De joker telt als elke steen die je nodig hebt.'),
+      E('li', null, 'Wie als eerste geen stenen meer heeft, wint en krijgt de punten van de stenen die de ander nog heeft. Een joker telt dan 30.')),
+    E('h3', null, 'Huisregel: dubbele stenen'),
+    E('ul', { class: 'rules' },
+      E('li', null, 'Heb je twee dezelfde stenen, zoals twee oranje 2’s? Dan mag je er tijdens je beurt één dicht naast je rek leggen. Dat kost geen beurt.'),
+      E('li', null, ex('dubbel', ['o2a', 'o2b'])),
+      E('li', null, 'Legt de ander ook een dubbele steen dicht, dan ruilen jullie die twee stenen meteen.'),
+      E('li', null, 'Zolang er niet geruild is, kun je je dichte steen tijdens je beurt terugpakken. Hij telt gewoon als jouw steen, ook aan het eind van het spel.')),
+    E('h3', null, 'Zo werkt het hier'),
+    E('ul', { class: 'rules' },
+      E('li', null, 'Tik stenen aan om ze te kiezen, ook meerdere tegelijk. Tik daarna op + bij een reeks, of op Nieuwe reeks.'),
+      E('li', null, 'Een reeks die nog niet klopt, krijgt een rode stippellijn.'),
+      E('li', null, 'Herstel zet de tafel en je rek terug naar het begin van je beurt.'),
+      PASS ? E('li', null, 'Na je beurt tik je op Geef door. Je stenen worden dan verborgen tot de ander op Toon mijn stenen tikt.')
+        : E('li', null, 'Je tegenspeler kijkt live mee terwijl je schuift. Pas bij Klaar telt je zet.'),
+      E('li', null, 'Na elke beurt plakt Jury Claude een paar emoji over het scherm, als oordeel over je beurt.'),
+      PASS ? E('li', null, 'Het spel wordt op dit apparaat bewaard. Sluit je de app, dan spelen jullie later gewoon verder.')
+        : E('li', null, 'Ben je aan de beurt, dan hoor je een belletje en trilt je telefoon, zolang deze pagina open is. Zet het geluid uit via het menu.')),
+    E('button', { class: 'btn ghost wide', 'data-act': 'close' }, 'Sluiten')];
+}
+function renderSheet() {
+  const wrap = $('#sheet');
+  if (!S.sheet) { wrap.hidden = true; wrap.replaceChildren(); return; }
+  const g = S.G;
+  let body = [];
+  if (S.sheet === 'menu') body = [E('h2', null, 'Menu'), standEl(),
+    E('div', { class: 'menu' },
+      S.ready && !S.noDb ? E('button', { class: 'menu-i', 'data-act': 'askNew' }, 'Nieuw spel starten') : null,
+      !PASS && seatIdx() >= 0 ? E('button', { class: 'menu-i', 'data-act': 'rename' }, 'Naam wijzigen') : null,
+      PASS ? null : E('button', { class: 'menu-i', 'data-act': 'mute' }, S.mute ? 'Belletje bij je beurt: uit' : 'Belletje bij je beurt: aan'),
+      E('button', { class: 'menu-i', 'data-act': 'rules' }, 'Spelregels'),
+      g && g.status === 'over' ? E('button', { class: 'menu-i', 'data-act': 'showOver' }, 'Uitslag bekijken') : null),
+    E('button', { class: 'btn ghost wide', 'data-act': 'close' }, 'Sluiten')];
+  else if (S.sheet === 'confirmNew' && PASS) body = [E('h2', null, 'Nieuw spel starten?'),
+    E('p', null, g && g.status === 'playing' ? 'Het spel dat nu loopt, stopt dan. Jullie krijgen allebei nieuwe stenen.' : 'Jullie krijgen allebei nieuwe stenen.'),
+    passNames(),
+    E('div', { class: 'sheet-acts' }, E('button', { class: 'btn ghost', 'data-act': 'close' }, 'Annuleren'),
+      E('button', { class: 'btn primary', 'data-act': 'newgame', disabled: S.busy }, 'Start'))];
+  else if (S.sheet === 'confirmNew') body = [E('h2', null, 'Nieuw spel starten?'),
+    E('p', null, g && g.status === 'playing' ? 'Het spel dat nu loopt, stopt dan. Je krijgt nieuwe stenen en je tegenspeler kan opnieuw meedoen.' : 'Je krijgt nieuwe stenen en je tegenspeler kan meedoen.'),
+    nameField('name2'), noWrite(),
+    E('div', { class: 'sheet-acts' }, E('button', { class: 'btn ghost', 'data-act': 'close' }, 'Annuleren'),
+      E('button', { class: 'btn primary', 'data-act': 'newgame', disabled: S.busy || S.canWrite === false }, 'Start'))];
+  else if (S.sheet === 'rename') body = [E('h2', null, 'Je naam'),
+    E('div', { class: 'field' }, E('label', { for: 'rename' }, 'Naam'), E('input', { id: 'rename', type: 'text', maxlength: '20', autocomplete: 'nickname', value: S.renameDraft })),
+    E('div', { class: 'sheet-acts' }, E('button', { class: 'btn ghost', 'data-act': 'close' }, 'Annuleren'), E('button', { class: 'btn primary', 'data-act': 'saveName' }, 'Bewaren'))];
+  else if (S.sheet === 'rules') body = rulesSheet();
+  else if (S.sheet === 'dbl') {
+    const t = dblOf(S.key);
+    if (!t) { S.sheet = null; wrap.hidden = true; wrap.replaceChildren(); return; }
+    body = [E('h2', null, 'Je dichte steen'),
+      E('div', { class: 'dbl-show' }, tileEl(t, false), E('p', null, `Je ${tileName(t)} ligt dicht naast je rek. Legt ${nameOf(oppKey())} ook een dubbele steen dicht, dan ruilen jullie die meteen.`)),
+      myTurn() ? null : E('p', { class: 'muted' }, 'Terugpakken kan alleen tijdens je eigen beurt.'),
+      E('div', { class: 'sheet-acts' }, E('button', { class: 'btn ghost', 'data-act': 'close' }, 'Sluiten'),
+        E('button', { class: 'btn primary', 'data-act': 'takeBack', disabled: !myTurn() || S.busy }, 'Terugpakken'))];
+  }
+  else if (S.sheet === 'over') body = overSheet();
+  wrap.hidden = false;
+  wrap.replaceChildren(E('div', { class: 'scrim', 'data-act': 'close' }), E('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true' }, body));
+}
+function render() {
+  const ae = document.activeElement;
+  const fid = ae && ae.id;
+  let s0 = null, s1 = null;
+  if (fid && ae.tagName === 'INPUT') { try { s0 = ae.selectionStart; s1 = ae.selectionEnd; } catch (e) {} }
+  renderTop(); renderTable(); renderStrip(); renderDock(); renderSheet();
+  if (fid) {
+    const n = document.getElementById(fid);
+    if (n && n !== document.activeElement) {
+      n.focus({ preventScroll: true });
+      if (s0 != null) { try { n.setSelectionRange(s0, s1); } catch (e) {} }
+    }
+  }
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const n = e.target.closest('[data-act]');
+  if (!n || n.disabled) return;
+  wake();
+  const a = n.dataset.act;
+  if (a === 'tile') tapTile(n.dataset.id, n.dataset.where);
+  else if (a === 'to') moveTo(n.dataset.target);
+  else if (a === 'desel') { S.sel.clear(); render(); }
+  else if (a === 'sort') { S.sort = n.dataset.mode === 'num' ? 'num' : 'color'; store.set('rc-sort', S.sort); render(); }
+  else if (a === 'reset') resetDraft();
+  else if (a === 'play') play();
+  else if (a === 'draw') draw();
+  else if (a === 'newgame') newGame();
+  else if (a === 'join') join();
+  else if (a === 'menu') { S.sheet = 'menu'; render(); }
+  else if (a === 'askNew') { S.sheet = 'confirmNew'; render(); }
+  else if (a === 'rename') { S.sheet = 'rename'; S.renameDraft = myName(); render(); }
+  else if (a === 'saveName') saveName();
+  else if (a === 'rules') { S.sheet = 'rules'; render(); }
+  else if (a === 'showOver') { S.sheet = 'over'; render(); }
+  else if (a === 'close') { S.sheet = null; render(); }
+  else if (a === 'dbl') putDouble(n.dataset.id);
+  else if (a === 'dblSheet') { S.sheet = 'dbl'; render(); }
+  else if (a === 'takeBack') takeBack();
+  else if (a === 'mute') { S.mute = !S.mute; store.set('rc-mute', S.mute ? '1' : '0'); if (!S.mute) chime(); render(); }
+  else if (a === 'handoff') passHandoff();
+  else if (a === 'reveal') passReveal();
+});
+document.addEventListener('pointerdown', unlockAudio, { passive: true });
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'name' || t.id === 'name2') S.nameDraft = t.value;
+  else if (t.id === 'pn1' || t.id === 'pn2') S.pn[t.id === 'pn1' ? 0 : 1] = t.value;
+  else if (t.id === 'rename') S.renameDraft = t.value;
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && S.sheet) { S.sheet = null; render(); }
+  if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+    e.preventDefault();
+    if (e.target.id === 'rename') saveName();
+    else if (PASS) passNewGame();
+    else if (S.G && S.G.status === 'waiting' && seatIdx() < 0) join();
+    else newGame();
+  }
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && S.G && S.G.status === 'playing') wake();
+  setTitle();
+});
+
+/* ---------- pass-and-play: local storage instead of the shared database ---------- */
+const LS = {
+  mem: {},
+  get(k) {
+    if (k in LS.mem) return LS.mem[k];
+    try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; }
+  },
+  set(k, v) {
+    LS.mem[k] = v;
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
+  }
+};
+const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+function deepMerge(a, b) {
+  const o = Object.assign({}, isObj(a) ? a : {});
+  for (const k in b) o[k] = isObj(b[k]) ? deepMerge(o[k], b[k]) : b[k];
+  return o;
+}
+const clone = v => v == null ? v : JSON.parse(JSON.stringify(v));
+/* Same shape as the db capability's document reference, so the game code works unchanged. */
+function localDoc(key) {
+  const subs = [];
+  const snap = () => { const d = LS.get(key); return { exists: d != null, data: () => clone(d), metadata: { fromCache: false, hasPendingWrites: false } }; };
+  const emit = () => { const sn = snap(); for (const fn of subs) { try { fn(sn); } catch (e) { console.error(e); } } };
+  return {
+    async get() { return snap(); },
+    async set(d) { LS.set(key, clone(d)); setTimeout(emit, 0); },
+    async update(d) { const cur = LS.get(key); if (!cur) throw { code: 'invalid_argument' }; LS.set(key, deepMerge(cur, clone(d))); setTimeout(emit, 0); },
+    onSnapshot(next) { subs.push(next); setTimeout(() => next(snap()), 0); return () => {}; }
+  };
+}
+const rackKey = k => 'rcs-rack-' + k;
+function loadRack(k) {
+  const r = LS.get(rackKey(k));
+  return r && typeof r === 'object' ? { gameId: r.gameId, tiles: Array.isArray(r.tiles) ? r.tiles.slice() : [] } : null;
+}
+/* Everything a player owns (rack, face-down tile, tile on its way to them), for the score at the end. */
+function ownedBy(k) {
+  const g = S.G, r = loadRack(k);
+  const other = g.seats.find(x => x !== k);
+  const taken = new Set(tableOf(g).flat());
+  if (Array.isArray(g.pool)) for (const id of g.pool) taken.add(id);
+  for (const id of [dblOf(other), inOf(other)]) if (id) taken.add(id);
+  for (const id of (g.swapOut && Array.isArray(g.swapOut[k]) ? g.swapOut[k] : [])) taken.add(id);
+  const out = [];
+  if (r && r.gameId === g.gameId) for (const id of cleanIds(r.tiles)) if (!taken.has(id) && !out.includes(id)) out.push(id);
+  for (const id of [dblOf(k), inOf(k)]) if (id && !out.includes(id)) out.push(id);
+  return out;
+}
+async function passNewGame() {
+  if (S.busy || !gameRef) return;
+  const n1 = (S.pn[0] || '').trim().slice(0, 20), n2 = (S.pn[1] || '').trim().slice(0, 20);
+  if (!n1 || !n2) { flash('Vul voor allebei een naam in.', 'bad'); return; }
+  LS.set('rcs-names', [n1, n2]);
+  const prev = S.G;
+  const sameNames = prev && prev.names && prev.names.p1 === n1 && prev.names.p2 === n2;
+  const history = sameNames && Array.isArray(prev.history) ? prev.history.slice(-99) : [];
+  const r = sameNames ? result(prev) : null;
+  if (r && r.decided) history.push({ w: r.w || null, p: r.pts });
+  const pool = shuffle(allTiles());
+  const r1 = pool.splice(0, 14), r2 = pool.splice(0, 14);
+  const turn = Math.random() < 0.5 ? 0 : 1;
+  const gameId = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const doc = {
+    v: 1, gameId, status: 'playing', seats: ['p1', 'p2'], names: { p1: n1, p2: n2 }, counts: { p1: 14, p2: 14 }, melded: {}, reveal: {},
+    turn, turnNo: 1, pool, table: [], passes: 0, last: { kind: 'start', key: null, n: 0, ids: [] }, winner: null, history, created: Date.now(),
+    dbl: {}, dblIn: {}, swapOut: {}, swap: null, streak: {}, jury: null
+  };
+  LS.set(rackKey('p1'), { gameId, tiles: r1 });
+  LS.set(rackKey('p2'), { gameId, tiles: r2 });
+  S.key = doc.seats[turn]; S.rack = loadRack(S.key); S.view = 'handoff';
+  S.sheet = null; S.newTile = null; S.draft = null; S.sel.clear(); S.msg = null;
+  await gameRef.set(doc);
+  render();
+}
+function passHandoff() {
+  const g = S.G;
+  if (!PASS || !g || g.status !== 'playing' || S.busy) return;
+  S.key = g.seats[g.turn]; S.rack = loadRack(S.key); S.view = 'handoff';
+  S.newTile = null; S.sel.clear(); S.draft = null; S.msg = null; clearTimeout(S.msgTimer); S.sheet = null;
+  render(); setTitle();
+}
+function passReveal() {
+  const g = S.G;
+  if (!PASS || !g || g.status !== 'playing') return;
+  S.key = g.seats[g.turn]; S.rack = loadRack(S.key); S.view = 'play';
+  ensureDraft(); applyIncoming(); healCheck(); render();
+}
+function bootPass() {
+  gameRef = localDoc('rcs-game');
+  rackRef = { async set(d) { LS.set(rackKey(S.key), clone(d)); }, onSnapshot() { return () => {}; } };
+  S.gameFresh = true; S.rackFresh = true; S.rackReady = true;
+  const names = LS.get('rcs-names');
+  if (Array.isArray(names)) S.pn = [String(names[0] || ''), String(names[1] || '')];
+  const g0 = LS.get('rcs-game');
+  if (g0 && Array.isArray(g0.seats) && g0.seats.length === 2) {
+    S.key = g0.status === 'playing' ? g0.seats[g0.turn] : g0.seats[0];
+    S.rack = loadRack(S.key);
+    S.view = g0.status === 'playing' ? 'handoff' : 'after';
+    if (g0.status === 'over') S.overShown = g0.gameId;
+  }
+  gameRef.onSnapshot(snap => { S.ready = true; S.G = snap.exists ? snap.data() : null; onGame(); });
+}
+
+/* ---------- boot ---------- */
+async function boot(saved) {
+  if (saved && saved.draft && typeof saved.draft === 'object') S.restore = saved.draft;
+  render();
+  if (PASS) { bootPass(); return; }
+  const C = window.claude;
+  if (!C || typeof C.use !== 'function') { S.noDb = true; render(); return; }
+  try { sampleP = Promise.resolve(C.use('sample')).catch(() => null); } catch (e) { sampleP = null; }
+  let db = null, user = null;
+  try { [db, user] = await Promise.all([C.use('db'), C.use('user')]); } catch (e) {}
+  if (!db) { S.noDb = true; render(); return; }
+  try { S.uid = user ? await user.id() : null; } catch (e) { S.uid = null; }
+  try { S.canWrite = user ? await user.can('data.write') : null; } catch (e) { S.canWrite = null; }
+  gameRef = db.doc('games/main');
+  try { rackRef = S.uid ? db.doc('data/users/' + S.uid + '/rummi') : null; } catch (e) { rackRef = null; }
+  if (!rackRef) { S.uid = null; rackRef = db.doc('hands/' + token); }
+  S.key = S.uid || token;
+  S.loadTimer = setTimeout(() => { S.slow = true; render(); }, 10000);
+  gameRef.onSnapshot(snap => {
+    S.ready = true;
+    S.G = snap.exists ? snap.data() : null;
+    if (!(snap.metadata && snap.metadata.fromCache)) { clearTimeout(S.loadTimer); S.slow = false; S.gameFresh = true; }
+    onGame();
+  }, err => { S.ready = true; S.dbErr = (err && err.code) || 'unavailable'; clearTimeout(S.loadTimer); render(); });
+  rackRef.onSnapshot(snap => {
+    const d = snap.exists ? snap.data() : null;
+    S.rack = d ? { gameId: d.gameId, tiles: Array.isArray(d.tiles) ? d.tiles.slice() : [] } : null;
+    S.rackReady = true;
+    if (!(snap.metadata && snap.metadata.fromCache)) S.rackFresh = true;
+    ensureDraft(); applyIncoming(); maybeReveal(); healCheck(); pushPresence(); render(); setTitle();
+  }, () => { S.rackReady = true; render(); });
+  C.use('room').then(room => {
+    if (!room) return;
+    S.room = room;
+    room.onPeers(ch => { S.peers = ch.peers; render(); }, () => {});
+    pushPresence();
+  }).catch(() => {});
+}
+/* Keep a half-finished turn when this page is updated while open. */
+let booted = false;
+function startOnce(saved) { if (booted) return; booted = true; boot(saved && typeof saved === 'object' ? saved : {}); }
+try {
+  const hot = window.claude && window.claude.hot;
+  if (hot && typeof hot.snapshot === 'function') hot.snapshot(() => ({ draft: S.draft ? JSON.parse(JSON.stringify(S.draft)) : null }));
+  if (hot && typeof hot.ready === 'function') { hot.ready(startOnce); setTimeout(() => startOnce({}), 2500); }
+  else startOnce((hot && hot.data) || {});
+} catch (e) { startOnce({}); }
+})();
+</script>
+<script>
+/* Offline: keep a copy of the game on this device so it also opens in airplane mode. */
+if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
