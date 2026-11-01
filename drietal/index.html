@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Drietal">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#17312c">
+<meta name="theme-color" content="#0c0c0d">
 <title>Drietal</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -19,10 +19,10 @@
 /* Layout: the iPad lies flat between two players. Each player has a band at their own edge
    (the top one turned upside down), the cards lie in the middle, the stack and +3 sit at the side. */
 :root{
-  --felt:#17312c; --felt-2:#1f3d37; --felt-3:#29504a; --edge:#0e221e;
-  --ink:#eef3ef; --muted:#9fb7ae; --card:#fbf8ef; --card-edge:#d9cfb8;
-  --c0:#93bdf0; --c1:#f8b47c; --c2:#f29cc6;          /* pastel fills: blauw, oranje (perzik), roze */
-  --c0-line:#5b95dc; --c1-line:#ec9550; --c2-line:#de6aa3;  /* the same colours a shade deeper, for lines and stripes */
+  --felt:#0c0c0d; --felt-2:#18181a; --felt-3:#2c2c30; --edge:#000;
+  --ink:#f2f2f0; --muted:#a3a3a6; --card:#fbf8ef; --card-edge:#d9cfb8;
+  --c0:#1d5fd6; --c1:#dc2a1f; --c2:#f5b700;               /* primary colours: blauw, rood, geel */
+  --c0-line:#1d5fd6; --c1-line:#dc2a1f; --c2-line:#d49800; /* lines and stripes; yellow a touch deeper to stay readable */
   --p0:#f0b12b; --p1:#5fd3c3; --p-ink:#13201b;
   --bad:#ff6d61; --shadow:rgba(0,0,0,.45);
   --f-display:"Rubik","Arial Black",system-ui,sans-serif;
@@ -42,7 +42,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--p0);outline-off
 
 /* Player bands */
 .zone{--pc:var(--p0);display:flex;align-items:center;gap:clamp(10px, 1.6vw, 22px);
-  padding:4px max(16px, 2.2vw);background:rgba(0,0,0,.18)}
+  padding:4px max(16px, 2.2vw);background:#141416}
 .zone[data-p="1"]{--pc:var(--p1);transform:rotate(180deg)}
 .z-who{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .z-name{font:800 clamp(20px, 2.6vw, 28px)/1.1 var(--f-display);color:var(--pc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -59,7 +59,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--p0);outline-off
 .buzz{--deep:color-mix(in srgb, var(--pc) 52%, #000);--light:color-mix(in srgb, var(--pc) 50%, #fff);
   position:relative;flex:none;width:var(--w);height:var(--h);margin:calc(var(--h) * .1);padding:0;border:0;border-radius:50%;background:transparent}
 .buzz::before{content:"";position:absolute;inset:calc(var(--h) * -.075);border-radius:50%;
-  background:radial-gradient(ellipse at 50% 35%, #34433f 0 45%, #121b18 72%);
+  background:radial-gradient(ellipse at 50% 35%, #3b3b40 0 45%, #111113 72%);
   box-shadow:inset 0 2px 2px rgba(255,255,255,.14),inset 0 -3px 6px rgba(0,0,0,.6),0 6px 16px rgba(0,0,0,.55)}
 .buzz .cap{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;
   background:radial-gradient(ellipse at 36% 28%, var(--light) 0 7%, var(--pc) 46%, var(--deep) 100%);
@@ -75,7 +75,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--p0);outline-off
 .timer{--tc:var(--pc);position:relative;flex:none;width:var(--w);height:var(--h);margin:calc(var(--h) * .1);border-radius:50%;
   background:conic-gradient(var(--tc) calc(var(--p, 1) * 360deg), rgba(255,255,255,.09) 0);box-shadow:0 6px 16px rgba(0,0,0,.55)}
 .timer::before{content:"";position:absolute;inset:calc(var(--h) * .09);border-radius:50%;
-  background:radial-gradient(ellipse at 50% 35%, #2a3835, #0f1715 75%);box-shadow:inset 0 3px 8px rgba(0,0,0,.7)}
+  background:radial-gradient(ellipse at 50% 35%, #2b2b2f, #0e0e10 75%);box-shadow:inset 0 3px 8px rgba(0,0,0,.7)}
 .timer b{position:absolute;inset:0;display:grid;place-items:center;font:800 calc(var(--h) * .66)/1 var(--f-display);color:var(--tc);font-variant-numeric:tabular-nums}
 .timer.hurry{--tc:var(--bad)}
 .timer.hurry b{animation:tick .5s ease-in-out infinite alternate}
@@ -190,7 +190,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--p0);outline-off
 
 <script>
 /* Game logic. A card is a number 0..80; its four features are its digits in base 3:
-   count (1-3), shape (rondje, vierkant, driehoek), filling (vol, gestreept, leeg), colour (blauw, oranje, roze).
+   count (1-3), shape (rondje, vierkant, driehoek), filling (vol, gestreept, leeg), colour (blauw, rood, geel).
    Three cards form a set when every feature is all the same or all different, i.e. the digits sum to 0 mod 3. */
 window.DT = (() => {
   const feat = id => [id % 3, Math.floor(id / 3) % 3, Math.floor(id / 9) % 3, Math.floor(id / 27) % 3];
@@ -223,7 +223,7 @@ window.DT = (() => {
 (() => {
 const { feat, isSet, findSet, shuffle, fullDeck } = window.DT;
 const SHAPES = ['rondje', 'vierkant', 'driehoek'], SHAPES_N = ['rondjes', 'vierkanten', 'driehoeken'];
-const COLORS = ['blauw', 'oranje', 'roze'], FILLS = ['vol', 'gestreept', 'leeg'];
+const COLORS = ['blauw', 'rood', 'geel'], FILLS = ['vol', 'gestreept', 'leeg'];
 const KEY = 'drietal-v1';
 const $ = s => document.querySelector(s);
 const store = {
@@ -383,7 +383,7 @@ function renderSheet() {
     E('div', { class: 'acts' }, E('button', { class: 'btn ghost', 'data-act': 'close' }, 'Annuleren'), E('button', { class: 'btn primary', 'data-act': 'newGame' }, 'Schudden en delen'))];
   else if (T.sheet === 'rules') body = [E('h2', null, 'Spelregels'),
     E('ul', null,
-      E('li', null, 'Elke kaart heeft vier kenmerken: het aantal (1, 2 of 3), de vorm (rondje, vierkant of driehoek), de kleur (blauw, oranje of roze) en de vulling (vol, gestreept of leeg).'),
+      E('li', null, 'Elke kaart heeft vier kenmerken: het aantal (1, 2 of 3), de vorm (rondje, vierkant of driehoek), de kleur (blauw, rood of geel) en de vulling (vol, gestreept of leeg).'),
       E('li', null, 'Drie kaarten vormen een set als elk kenmerk bij alle drie hetzelfde is, of bij alle drie verschillend.'),
       E('li', null, exCards([0, 10, 20], 'een set: aantal en vulling allemaal anders, vorm en kleur allemaal hetzelfde')),
       E('li', null, exCards([0, 10, 23], 'geen set: twee rondjes en één vierkant')),
@@ -473,19 +473,26 @@ function unlockAudio() {
     if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
   } catch (e) {}
 }
-function tone(freq, dur, type, vol, slide) {
-  const t0 = actx.currentTime + 0.01, o = actx.createOscillator(), g = actx.createGain();
+function tone(freq, dur, type, vol, slide, delay) {
+  const t0 = actx.currentTime + 0.01 + (delay || 0), o = actx.createOscillator(), g = actx.createGain();
   o.type = type; o.frequency.setValueAtTime(freq, t0);
   if (slide) o.frequency.exponentialRampToValueAtTime(slide, t0 + dur);
   g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   o.connect(g); g.connect(actx.destination); o.start(t0); o.stop(t0 + dur + 0.02);
 }
+const SOUNDS = {
+  /* Game-show buzz-in: a thump as the button goes down, then a bright "di-DING". */
+  press: () => { tone(170, 0.16, 'sine', 0.45, 55); tone(1046.5, 0.3, 'triangle', 0.24); tone(1568, 0.7, 'triangle', 0.3, null, 0.09); tone(3136, 0.5, 'sine', 0.07, null, 0.09); },
+  tick: () => tone(T.lastSec === 1 ? 1320 : 990, 0.07, 'square', 0.08),
+  late: () => tone(150, 0.45, 'sawtooth', 0.18, 110),
+  good: () => [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, 0.28, 'triangle', 0.22, null, i * 0.075)),
+  wrong: () => { tone(220, 0.18, 'square', 0.12, 180); tone(165, 0.32, 'square', 0.12, 120, 0.16); }
+};
 function sound(kind) {
   try {
-    if (!T.sound || !actx || actx.state !== 'running') return;
-    if (kind === 'press') tone(520, 0.12, 'triangle', 0.25, 260);
-    else if (kind === 'tick') tone(T.lastSec === 1 ? 1320 : 990, 0.07, 'square', 0.08);
-    else if (kind === 'late') tone(150, 0.45, 'sawtooth', 0.18, 110);
+    if (!T.sound || !actx || !SOUNDS[kind]) return;
+    if (actx.state === 'running') SOUNDS[kind]();
+    else actx.resume().then(() => { try { SOUNDS[kind](); } catch (e) {} }).catch(() => {});
   } catch (e) {}
 }
 function tapCard(k) {
@@ -509,14 +516,14 @@ function tapCard(k) {
         for (const x of picked) { G.board[x] = G.deck.shift(); fresh.set(x, 'deal'); }
       }
       T.fx = fresh; T.claim = null; T.sel = []; T.busy = false; T.bump = p;
-      say(p, 'Raak! Eén set erbij.'); say(1 - p, `${nm(p)} pakt een set.`);
+      say(p, 'Raak! Eén set erbij.'); say(1 - p, `${nm(p)} pakt een set.`); sound('good');
       save(); checkEnd(); render(); clearFxSoon();
       setTimeout(() => { if (T.bump === p) { T.bump = null; } }, 600);
     }, 430);
   } else {
     T.fx = new Map(picked.map(x => [x, 'nope']));
     T.claim = null;
-    say(p, 'Dat is geen set.'); say(1 - p, 'Geen set! Jouw kans.');
+    say(p, 'Dat is geen set.'); say(1 - p, 'Geen set! Jouw kans.'); sound('wrong');
     render();
     setTimeout(() => { T.fx = new Map(); T.sel = []; T.busy = false; render(); }, 480);
   }
@@ -592,6 +599,7 @@ async function wake() {
 
 /* ---------- events ---------- */
 document.addEventListener('click', e => {
+  unlockAudio();
   const n = e.target.closest('[data-act]');
   if (!n || n.disabled) return;
   wake();
@@ -619,6 +627,7 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') wake(); });
 document.addEventListener('pointerdown', unlockAudio, { passive: true });
+document.addEventListener('touchend', unlockAudio, { passive: true });
 try { new ResizeObserver(() => layout()).observe($('#grid')); } catch (e) { addEventListener('resize', layout); }
 window.DT_idle = () => T.claim === null && !T.busy && !T.sheet;
 render();
