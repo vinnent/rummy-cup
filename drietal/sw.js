@@ -1,13 +1,14 @@
 /* Keeps Drietal on the device so it opens without internet.
    Only answers for its own files: other apps on this site have their own copy-keeper. */
 const PREFIX = 'drietal-';
-const APP = PREFIX + 'app-46c0b0298b';
+const APP = PREFIX + 'app-2d08db062f';
 const FONTS = PREFIX + 'fonts';
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 const OWN = new Set(SHELL.map(p => new URL(p, self.registration.scope).pathname));
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(APP).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  /* cache: 'reload' skips the browser's own 10-minute copy, so a new version really stores the new files. */
+  e.waitUntil(caches.open(APP).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -34,7 +35,7 @@ self.addEventListener('fetch', e => {
   /* Answer from the device at once; when online, fetch a fresh copy for next time. */
   e.respondWith(caches.open(APP).then(async c => {
     const hit = await c.match(req, { ignoreSearch: true });
-    const fresh = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => null);
+    const fresh = fetch(req, { cache: 'no-cache' }).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => null);
     if (hit) { e.waitUntil(fresh); return hit; }
     return (await fresh) || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   }));

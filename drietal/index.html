@@ -537,12 +537,29 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') wake(); });
 try { new ResizeObserver(() => layout()).observe($('#grid')); } catch (e) { addEventListener('resize', layout); }
+window.DT_idle = () => T.claim === null && !T.busy && !T.sheet;
 render();
 })();
 </script>
 <script>
 /* Offline: keep a copy of the game on this device so it also opens in airplane mode. */
-if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+/* New version: the copy-keeper swaps itself in, and the page reloads once nobody is choosing cards. */
+if ('serviceWorker' in navigator) {
+  let hadCtrl = !!navigator.serviceWorker.controller, reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadCtrl) { hadCtrl = true; return; }
+    if (reloading) return;
+    reloading = true;
+    const go = () => (window.DT_idle && !window.DT_idle()) ? setTimeout(go, 1500) : location.reload();
+    go();
+  });
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').then(reg => {
+    /* Check for a new version whenever the app comes back to the front, and every 10 minutes while open. */
+    const check = () => { if (document.visibilityState === 'visible' && navigator.onLine !== false) reg.update().catch(() => {}); };
+    document.addEventListener('visibilitychange', check);
+    setInterval(check, 10 * 60 * 1000);
+  }).catch(() => {}));
+}
 </script>
 </body>
 </html>
