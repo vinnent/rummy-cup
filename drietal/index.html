@@ -41,10 +41,10 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--p0);outline-off
   padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 
 /* Player bands */
-.zone{--pc:var(--p0);display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:clamp(12px, 2vw, 24px);
-  padding:6px max(16px, 2.2vw);background:rgba(0,0,0,.18)}
+.zone{--pc:var(--p0);display:flex;align-items:center;gap:clamp(10px, 1.6vw, 22px);
+  padding:4px max(16px, 2.2vw);background:rgba(0,0,0,.18)}
 .zone[data-p="1"]{--pc:var(--p1);transform:rotate(180deg)}
-.z-who{min-width:0;display:flex;flex-direction:column;gap:2px}
+.z-who{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .z-name{font:800 clamp(20px, 2.6vw, 28px)/1.1 var(--f-display);color:var(--pc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .z-msg{font:600 clamp(14px, 1.7vw, 17px)/1.3 var(--f-ui);color:var(--ink);min-height:1.3em}
 .z-msg.dim{color:var(--muted);font-weight:500}
@@ -53,23 +53,33 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--p0);outline-off
 .z-score span{font:700 11px var(--f-ui);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-top:4px}
 .z-score.bump b{animation:bump .5s cubic-bezier(.3,1.8,.5,1)}
 @keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.5)}100%{transform:scale(1)}}
-/* The Set button: a big round push button in a dark housing. It sinks when pressed and stays down, lit, while you choose. */
-.buzz{--size:clamp(96px, 18vmin, 150px);--deep:color-mix(in srgb, var(--pc) 52%, #000);--light:color-mix(in srgb, var(--pc) 50%, #fff);
-  position:relative;flex:none;width:var(--size);height:var(--size);margin:10px;padding:0;border:0;border-radius:50%;background:transparent}
-.buzz::before{content:"";position:absolute;inset:calc(var(--size) * -.07);border-radius:50%;
-  background:radial-gradient(circle at 50% 35%, #34433f 0 45%, #121b18 72%);
+/* The Set button: a big oval push button in a dark housing. It sinks when pressed and stays down, lit, while you choose.
+   The timer next to it has exactly the same size. */
+.buzz,.timer{--h:clamp(74px, min(19vmin, 13.5vw), 158px);--w:calc(var(--h) * 1.65)}
+.buzz{--deep:color-mix(in srgb, var(--pc) 52%, #000);--light:color-mix(in srgb, var(--pc) 50%, #fff);
+  position:relative;flex:none;width:var(--w);height:var(--h);margin:calc(var(--h) * .1);padding:0;border:0;border-radius:50%;background:transparent}
+.buzz::before{content:"";position:absolute;inset:calc(var(--h) * -.075);border-radius:50%;
+  background:radial-gradient(ellipse at 50% 35%, #34433f 0 45%, #121b18 72%);
   box-shadow:inset 0 2px 2px rgba(255,255,255,.14),inset 0 -3px 6px rgba(0,0,0,.6),0 6px 16px rgba(0,0,0,.55)}
 .buzz .cap{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;
-  background:radial-gradient(circle at 36% 28%, var(--light) 0 7%, var(--pc) 46%, var(--deep) 100%);
-  box-shadow:0 calc(var(--size) * .075) 0 var(--deep),0 calc(var(--size) * .075 + 5px) 12px rgba(0,0,0,.5),inset 0 -5px 10px rgba(0,0,0,.18),inset 0 3px 3px rgba(255,255,255,.35);
-  transform:translateY(calc(var(--size) * -.06));transition:transform .07s ease-out, box-shadow .07s ease-out;
-  font:800 calc(var(--size) * .25)/1 var(--f-display);letter-spacing:.02em;color:var(--p-ink);text-shadow:0 1px 0 rgba(255,255,255,.4)}
-.buzz:active .cap,.buzz.down .cap{transform:translateY(calc(var(--size) * .01));
-  box-shadow:0 calc(var(--size) * .012) 0 var(--deep),0 3px 6px rgba(0,0,0,.45),inset 0 -3px 6px rgba(0,0,0,.2),inset 0 3px 3px rgba(255,255,255,.3)}
-.buzz.down .cap{font-size:calc(var(--size) * .14);animation:lit 1s ease-in-out infinite alternate}
-@keyframes lit{from{filter:brightness(1.05)}to{filter:brightness(1.3) drop-shadow(0 0 calc(var(--size) * .12) var(--pc))}}
+  background:radial-gradient(ellipse at 36% 28%, var(--light) 0 7%, var(--pc) 46%, var(--deep) 100%);
+  box-shadow:0 calc(var(--h) * .08) 0 var(--deep),0 calc(var(--h) * .08 + 5px) 12px rgba(0,0,0,.5),inset 0 -5px 10px rgba(0,0,0,.18),inset 0 3px 3px rgba(255,255,255,.35);
+  transform:translateY(calc(var(--h) * -.065));transition:transform .07s ease-out, box-shadow .07s ease-out;
+  font:800 calc(var(--h) * .38)/1 var(--f-display);letter-spacing:.02em;color:var(--p-ink);text-shadow:0 1px 0 rgba(255,255,255,.4)}
+.buzz:active .cap,.buzz.down .cap{transform:translateY(calc(var(--h) * .01));
+  box-shadow:0 calc(var(--h) * .012) 0 var(--deep),0 3px 6px rgba(0,0,0,.45),inset 0 -3px 6px rgba(0,0,0,.2),inset 0 3px 3px rgba(255,255,255,.3)}
+.buzz.down .cap{font-size:calc(var(--h) * .2);animation:lit 1s ease-in-out infinite alternate}
+@keyframes lit{from{filter:brightness(1.05)}to{filter:brightness(1.3) drop-shadow(0 0 calc(var(--h) * .12) var(--pc))}}
 .buzz:disabled{cursor:default}
 .buzz:disabled .cap{filter:saturate(.2) brightness(.55)}
+.timer{--tc:var(--pc);position:relative;flex:none;width:var(--w);height:var(--h);margin:calc(var(--h) * .1);border-radius:50%;
+  background:conic-gradient(var(--tc) calc(var(--p, 1) * 360deg), rgba(255,255,255,.09) 0);box-shadow:0 6px 16px rgba(0,0,0,.55)}
+.timer::before{content:"";position:absolute;inset:calc(var(--h) * .09);border-radius:50%;
+  background:radial-gradient(ellipse at 50% 35%, #2a3835, #0f1715 75%);box-shadow:inset 0 3px 8px rgba(0,0,0,.7)}
+.timer b{position:absolute;inset:0;display:grid;place-items:center;font:800 calc(var(--h) * .66)/1 var(--f-display);color:var(--tc);font-variant-numeric:tabular-nums}
+.timer.hurry{--tc:var(--bad)}
+.timer.hurry b{animation:tick .5s ease-in-out infinite alternate}
+@keyframes tick{to{transform:scale(1.14)}}
 .z-new{height:56px;padding:0 24px;border:0;border-radius:999px;background:transparent;color:var(--pc);box-shadow:inset 0 0 0 3px var(--pc);
   font:800 clamp(17px, 2vw, 21px)/1 var(--f-display);margin:10px}
 .zone.claiming{background:color-mix(in srgb, var(--pc) 22%, transparent);box-shadow:inset 0 0 0 3px var(--pc)}
@@ -150,12 +160,12 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--p0);outline-off
 @keyframes rbfall{from{transform:translateY(0) rotate(0)}to{transform:translateY(calc(100vh + 96px)) rotate(var(--r))}}
 
 @media (max-width: 560px){
-  .zone{grid-template-columns:minmax(0,1fr) auto auto;gap:10px;padding:10px 14px}
+  .zone{gap:8px;padding:4px 12px}
   .z-score{min-width:44px}
   .side{width:52px}
 }
 @media (prefers-reduced-motion: reduce){
-  .card,.card.deal,.card.nope,.card.hint,.card.go0,.card.go1,.z-score.bump b,.buzz .cap{animation:none!important;transition:none}
+  .card,.card.deal,.card.nope,.card.hint,.card.go0,.card.go1,.z-score.bump b,.buzz .cap,.timer b{animation:none!important;transition:none}
   .card.go0,.card.go1{opacity:0}
   .rb-e{animation:none;transform:translate(-50%,-50%)} .rb-name{animation:none;opacity:1} .rb-fall{display:none}
 }
@@ -224,7 +234,9 @@ const store = {
 /* Saved on the device: the game itself. Not saved: who is choosing right now. */
 let G = sane(store.get()) || { v: 1, status: 'setup', names: ['', ''], deck: [], board: [], scores: [0, 0], wins: [0, 0], draws: 0 };
 const T = { claim: null, sel: [], msg: [null, null], msgTimer: [0, 0], busy: false, sheet: null, nameDraft: G.names.slice(),
-  fx: new Map(), hintAt: 0, bump: null, lastCols: 0 };
+  fx: new Map(), hintAt: 0, bump: null, lastCols: 0, ends: 0, raf: 0, backup: 0, lastSec: 0,
+  sound: (() => { try { return localStorage.getItem('drietal-sound') !== '0'; } catch (e) { return true; } })() };
+const CLAIM_MS = 5000;   /* time to pick your three cards after pressing Set */
 if (G.status === 'setup') T.sheet = 'setup';
 
 function sane(g) {
@@ -309,13 +321,18 @@ function zoneEl(i) {
     if (G.status === 'over') msg = overText(i);
     else if (G.status !== 'playing') msg = '';
     else if (claiming) { msg = T.sel.length ? `Nog ${3 - T.sel.length} ${3 - T.sel.length === 1 ? 'kaart' : 'kaarten'} kiezen` : 'Kies je drie kaarten'; dim = false; }
-    else if (other) msg = `${nm(T.claim)} kiest…`;
+    else if (other) msg = `${nm(T.claim)} kiest… nog ${Math.max(1, Math.ceil((T.ends - performance.now()) / 1000))}`;
     else msg = 'Roep Set! en tik op je knop';
   }
   const score = E('div', { class: 'z-score' + (T.bump === i ? ' bump' : '') }, E('b', null, String(G.scores[i] || 0)), E('span', null, (G.scores[i] || 0) === 1 ? 'set' : 'sets'));
+  let timer = null;
+  if (claiming && G.status === 'playing') {
+    const left = Math.max(0, T.ends - performance.now()), sec = Math.max(1, Math.ceil(left / 1000));
+    timer = E('div', { class: 'timer' + (sec <= 2 ? ' hurry' : ''), id: 'timer', role: 'timer', 'aria-label': `Nog ${sec} seconden`, style: `--p:${(left / CLAIM_MS).toFixed(4)}` }, E('b', null, String(sec)));
+  }
   z.replaceChildren(
     E('div', { class: 'z-who' }, E('div', { class: 'z-name' }, nm(i)), E('div', { class: 'z-msg' + (dim ? ' dim' : '') }, msg)),
-    score, btn);
+    ...[score, timer, btn].filter(Boolean));
 }
 function overText(i) {
   const [a, b] = G.scores;
@@ -358,6 +375,7 @@ function renderSheet() {
     E('div', { class: 'menu' },
       E('button', { 'data-act': 'askNew' }, 'Nieuw spel'),
       E('button', { 'data-act': 'names' }, 'Andere namen'),
+      E('button', { 'data-act': 'sound' }, T.sound ? 'Geluid: aan' : 'Geluid: uit'),
       E('button', { 'data-act': 'rules' }, 'Spelregels')),
     E('button', { class: 'btn ghost wide', 'data-act': 'close' }, 'Sluiten')];
   else if (T.sheet === 'confirmNew') body = [E('h2', null, 'Nieuw spel?'),
@@ -370,6 +388,7 @@ function renderSheet() {
       E('li', null, exCards([0, 10, 20], 'een set: aantal en vulling allemaal anders, vorm en kleur allemaal hetzelfde')),
       E('li', null, exCards([0, 10, 23], 'geen set: twee rondjes en één vierkant')),
       E('li', null, 'Zie je een set, roep dan "Set!". Wie het eerst riep, tikt op de eigen Set-knop en kiest de drie kaarten. Klopt het, dan krijg je een punt en komen er nieuwe kaarten. Klopt het niet, dan mag de ander.'),
+      E('li', null, 'Na je druk op Set heb je 5 seconden om je drie kaarten aan te tikken. Lukt dat niet, dan is je beurt voorbij en mogen jullie allebei weer drukken.'),
       E('li', null, 'Ziet niemand een set, tik dan op de plusknop aan de zijkant: dan komen er drie kaarten bij. Ligt er toch nog een set, dan zegt de app dat. Tik je nog een keer, dan licht er een kaart op die erbij hoort.'),
       E('li', null, 'Is de stapel op en ligt er geen set meer, dan is het potje voorbij. Wie de meeste sets heeft, wint.'),
       E('li', null, 'Het spel wordt op dit apparaat bewaard. Werkt ook zonder internet. Zet op de iPad de draairichting vast, dan blijft het scherm staan als hij plat ligt.')),
@@ -404,10 +423,70 @@ function deal() {
 }
 function claim(i) {
   if (G.status !== 'playing' || T.busy) return;
-  if (T.claim === i) { T.claim = null; T.sel = []; render(); return; }
+  if (T.claim === i) { stopTimer(); T.claim = null; T.sel = []; render(); return; }
   if (T.claim !== null) { say(i, `${nm(T.claim)} kiest al.`); render(); return; }
   T.claim = i; T.sel = []; T.msg = [null, null];
+  clearTimeout(T.msgTimer[0]); clearTimeout(T.msgTimer[1]);
+  T.ends = performance.now() + CLAIM_MS; T.lastSec = Math.ceil(CLAIM_MS / 1000);
+  sound('press');
+  render(); startTimer();
+}
+/* The countdown: the ring drains every frame, the number and the other player's line change every second. */
+function startTimer() {
+  stopTimer();
+  const loop = () => {
+    if (T.claim === null || T.busy) return;
+    const left = T.ends - performance.now();
+    if (left <= 0) { timeUp(); return; }
+    const el = document.getElementById('timer');
+    if (el) el.style.setProperty('--p', (left / CLAIM_MS).toFixed(4));
+    const sec = Math.ceil(left / 1000);
+    if (sec !== T.lastSec) {
+      T.lastSec = sec;
+      if (el) { el.querySelector('b').textContent = String(sec); el.classList.toggle('hurry', sec <= 2); el.setAttribute('aria-label', `Nog ${sec} seconden`); }
+      const om = document.querySelector(`#z${1 - T.claim} .z-msg`);
+      if (om && !T.msg[1 - T.claim]) om.textContent = `${nm(T.claim)} kiest… nog ${sec}`;
+      if (sec <= 3) sound('tick');
+    }
+    T.raf = requestAnimationFrame(loop);
+  };
+  T.raf = requestAnimationFrame(loop);
+  /* Backup in case the screen stops drawing frames (app in the background). */
+  T.backup = setTimeout(() => { if (T.claim !== null && !T.busy && performance.now() >= T.ends) timeUp(); }, CLAIM_MS + 80);
+}
+function stopTimer() { cancelAnimationFrame(T.raf); clearTimeout(T.backup); T.raf = 0; T.backup = 0; }
+function timeUp() {
+  const p = T.claim;
+  stopTimer();
+  if (p === null || T.busy) return;
+  T.claim = null; T.sel = []; T.fx = new Map();
+  say(p, 'Te laat! Je beurt is voorbij.', 3200); say(1 - p, 'Te laat! Jij mag weer.', 3200);
+  sound('late');
   render();
+}
+
+/* ---------- sound: a click on Set, ticks on 3-2-1, a buzzer when time is up ---------- */
+let actx = null;
+function unlockAudio() {
+  try {
+    if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); }
+    if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
+  } catch (e) {}
+}
+function tone(freq, dur, type, vol, slide) {
+  const t0 = actx.currentTime + 0.01, o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t0);
+  if (slide) o.frequency.exponentialRampToValueAtTime(slide, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(actx.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+}
+function sound(kind) {
+  try {
+    if (!T.sound || !actx || actx.state !== 'running') return;
+    if (kind === 'press') tone(520, 0.12, 'triangle', 0.25, 260);
+    else if (kind === 'tick') tone(T.lastSec === 1 ? 1320 : 990, 0.07, 'square', 0.08);
+    else if (kind === 'late') tone(150, 0.45, 'sawtooth', 0.18, 110);
+  } catch (e) {}
 }
 function tapCard(k) {
   if (G.status !== 'playing' || T.busy) return;
@@ -416,6 +495,7 @@ function tapCard(k) {
   if (at >= 0) T.sel.splice(at, 1); else T.sel.push(k);
   if (T.sel.length < 3) { render(); return; }
   const p = T.claim, picked = T.sel.slice(), [a, b, c] = picked.map(x => G.board[x]);
+  stopTimer();
   T.busy = true;
   if (isSet(a, b, c)) {
     T.fx = new Map(picked.map(x => [x, 'go' + p]));
@@ -523,6 +603,7 @@ document.addEventListener('click', e => {
   else if (a === 'askNew') { T.sheet = 'confirmNew'; render(); }
   else if (a === 'newGame') deal();
   else if (a === 'names') { T.nameDraft = G.names.slice(); T.sheet = 'names'; render(); }
+  else if (a === 'sound') { T.sound = !T.sound; try { localStorage.setItem('drietal-sound', T.sound ? '1' : '0'); } catch (e) {} unlockAudio(); render(); }
   else if (a === 'rules') { T.sheet_back = T.sheet === 'setup' ? 'backSetup' : 'close'; T.sheet = 'rules'; render(); }
   else if (a === 'backSetup') { T.sheet = 'setup'; T.sheet_back = null; render(); }
   else if (a === 'start') startGame();
@@ -537,6 +618,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && T.sheet && G.status !== 'setup') { T.sheet = null; render(); }
 });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') wake(); });
+document.addEventListener('pointerdown', unlockAudio, { passive: true });
 try { new ResizeObserver(() => layout()).observe($('#grid')); } catch (e) { addEventListener('resize', layout); }
 window.DT_idle = () => T.claim === null && !T.busy && !T.sheet;
 render();
