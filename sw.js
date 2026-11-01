@@ -1,9 +1,9 @@
 /* Keeps Rummy Cup Samen on the device so it opens without internet.
    Only answers for its own files: other apps on this site have their own copy-keeper. */
 const PREFIX = 'rummy-';
-const APP = PREFIX + 'app-95d51f3166';
+const APP = PREFIX + 'app-2-hout';
 const FONTS = PREFIX + 'fonts';
-const SHELL = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
+const SHELL = ["./", "index.html", "manifest.webmanifest", "wood.jpg", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 const OWN = new Set(SHELL.map(p => new URL(p, self.registration.scope).pathname));
 
 self.addEventListener('install', e => {

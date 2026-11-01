@@ -7,8 +7,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Rummy Cup">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#d4ded6" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#15201c" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#c2a581" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#2a2017" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
@@ -193,8 +193,11 @@ button.tile{cursor:pointer}
 /* Pass-and-play: wider table and bigger tiles on a tablet, hidden rack during the hand-over */
 html.pass .band{padding-left:max(16px, env(safe-area-inset-left,0px), calc((100% - 1100px) / 2));padding-right:max(16px, env(safe-area-inset-right,0px), calc((100% - 1100px) / 2))}
 @media (min-width: 700px){
-  html.pass .sets{--stw:clamp(36px, 4.6vw, 56px);gap:12px 14px}
-  html.pass .rack{--rt:clamp(44px, 5.4vw, 64px)}
+  /* iPad: tiles sized to the screen (an iPad mini gets roughly the same feel as a phone), capped by height in landscape */
+  html.pass .sets{--stw:clamp(40px, min(6.4vw, 6.8vh), 62px)}
+  html.pass .rack{--rt:clamp(46px, min(7.8vw, 7.2vh), 72px)}
+  html.pass .mini .tile,html.pass .ex .tile{--tw:34px}
+  html.pass .deco .tile{--tw:52px}
 }
 html.pass .acts{flex-wrap:wrap}
 .rack-hidden{align-content:center}
@@ -240,7 +243,111 @@ html.pass .acts{flex-wrap:wrap}
 .rb-fall{position:absolute;top:-48px;font-size:28px;animation-name:rbfall;animation-timing-function:cubic-bezier(.3,.1,.6,1);animation-fill-mode:both}
 @keyframes rbfall{from{transform:translateY(0) rotate(0)}to{transform:translateY(calc(100vh + 96px)) rotate(var(--r))}}
 
+/* ---------- Samen (this build): a wooden table and real two-ledge racks ---------- */
+html.pass{
+  --felt:#c2a581; --felt-edge:#a98a66; --felt-deep:rgba(96,62,30,.14); --card:#f8f2e8; --field:#fffaf2;
+  --ink:#24180e; --muted:#46331f; --line:#b49a7b;
+  --shadow:rgba(46,26,8,.32); --scrim:rgba(30,18,8,.45);
+  --wood-shade:radial-gradient(140% 95% at 50% 35%, transparent 55%, rgba(70,40,14,.20)), linear-gradient(transparent, transparent);
+  --rk-hi:#b57a4a; --rk:#8a5531; --rk-lo:#653a1d; --rk-deep:#4a2913; --rk-ink:#f6e6d2;
+  background-color:var(--felt);
+  background-image:var(--wood-shade), url(wood.jpg);
+  background-size:100% 100%, 100% 100%, 640px auto;
+  background-attachment:fixed;
+}
+@media (prefers-color-scheme: dark){
+  html.pass:not([data-theme="light"]){
+    --felt:#4b3d2d; --felt-edge:#33281d; --felt-deep:rgba(0,0,0,.24); --card:#2b2119; --field:#1f1812;
+    --ink:#f2e8dc; --muted:#cdb9a2; --line:#6b5641;
+    --shadow:rgba(0,0,0,.5); --scrim:rgba(0,0,0,.6);
+    --wood-shade:radial-gradient(140% 95% at 50% 35%, transparent 50%, rgba(0,0,0,.35)), linear-gradient(rgba(16,9,3,.66), rgba(16,9,3,.66));
+    --rk-hi:#8f5b33; --rk:#6b3f21; --rk-lo:#4c2a14; --rk-deep:#2e180a; --rk-ink:#efdcc4;
+  }
+}
+html.pass[data-theme="dark"]{
+  --felt:#4b3d2d; --felt-edge:#33281d; --felt-deep:rgba(0,0,0,.24); --card:#2b2119; --field:#1f1812;
+  --ink:#f2e8dc; --muted:#cdb9a2; --line:#6b5641;
+  --shadow:rgba(0,0,0,.5); --scrim:rgba(0,0,0,.6);
+  --wood-shade:radial-gradient(140% 95% at 50% 35%, transparent 50%, rgba(0,0,0,.35)), linear-gradient(rgba(16,9,3,.66), rgba(16,9,3,.66));
+  --rk-hi:#8f5b33; --rk:#6b3f21; --rk-lo:#4c2a14; --rk-deep:#2e180a; --rk-ink:#efdcc4;
+}
+html.pass body{background:transparent}
+html.pass body::after{display:none}
+html.pass .field input{background:var(--field)}
+html.pass .btn.primary{box-shadow:0 2px 0 rgba(0,0,0,.16),0 4px 12px var(--shadow)}
+
+/* Your rack: brown, two ledges. Tiles stand on a ledge; its lip hides the bottom few pixels of each tile.
+   --n2 (set by the script) is half the number of tiles, so everything always fits on two ledges. */
+html.pass .dock{background:transparent;color:var(--ink);border-top:0;padding-block:2px 12px;container-type:inline-size}
+html.pass .dock.myturn{animation:none}
+html.pass .rack{
+  --rpx:12px; --rpt:11px; --rg:5px; --lip:12px; --lo:5px; --gapv:8px;
+  --tw-r:min(var(--rt), calc((100cqw - var(--side, 0px) - 2 * var(--rpx) - 10px - (var(--n2, 7) - 1) * var(--rg)) / var(--n2, 7)));
+  --th:calc(var(--tw-r) * 1.34);
+  --y1:calc(var(--rpt) + var(--th) - var(--lo));
+  --y2:calc(var(--y1) + var(--th) + var(--lip) - var(--lo) + var(--gapv));
+  position:relative;display:grid;grid-template-columns:repeat(auto-fill, var(--tw-r));grid-template-rows:var(--th) var(--th);
+  grid-auto-rows:var(--th);align-content:start;justify-content:start;
+  column-gap:var(--rg);row-gap:calc(var(--lip) - var(--lo) + var(--gapv));
+  padding:var(--rpt) var(--rpx) calc(var(--lip) - var(--lo) + 9px);
+  min-height:calc(var(--rpt) + 2 * var(--th) + 2 * (var(--lip) - var(--lo)) + var(--gapv) + 9px);
+  max-height:none;overflow:visible;border-radius:16px;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.34), rgba(0,0,0,.08) 30%, rgba(0,0,0,.02) 70%, rgba(0,0,0,.14)) 8px 4px / calc(100% - 16px) calc(var(--y1) - 4px) no-repeat,
+    linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.08) 30%, rgba(0,0,0,.02) 70%, rgba(0,0,0,.14)) 8px calc(var(--y1) + var(--lip)) / calc(100% - 16px) calc(var(--y2) - var(--y1) - var(--lip)) no-repeat,
+    linear-gradient(180deg, var(--rk-hi), var(--rk) 22%, var(--rk) 70%, var(--rk-lo));
+  box-shadow:inset 0 1px 0 rgba(255,225,190,.35), inset 0 -4px 0 rgba(0,0,0,.22), 0 2px 0 var(--rk-deep), 0 14px 22px -8px rgba(40,20,5,.55)}
+html.pass .rack::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:2;
+  background:
+    linear-gradient(180deg, rgba(255,226,190,.55) 0 1.5px, var(--rk-hi) 1.5px, var(--rk) 55%, var(--rk-lo)) 6px var(--y1) / calc(100% - 12px) var(--lip) no-repeat,
+    linear-gradient(180deg, rgba(0,0,0,.30), transparent) 8px calc(var(--y1) + var(--lip)) / calc(100% - 16px) 7px no-repeat,
+    linear-gradient(180deg, rgba(255,226,190,.55) 0 1.5px, var(--rk-hi) 1.5px, var(--rk) 55%, var(--rk-lo)) 6px var(--y2) / calc(100% - 12px) var(--lip) no-repeat}
+html.pass .rack::before{content:"";position:absolute;inset:-4px;border-radius:20px;pointer-events:none;opacity:0;
+  box-shadow:0 0 0 3px var(--accent),0 0 28px 4px var(--accent)}
+html.pass .dock.myturn .rack::before{animation:rackglow 1.2s ease-out 3}
+@keyframes rackglow{0%{opacity:1}100%{opacity:0}}
+html.pass .rack .tile,html.pass .rack .tile-back{--tw:var(--tw-r)}
+html.pass .rack .tile{box-shadow:0 1px 0 var(--ivory-edge),-1px 2px 3px rgba(0,0,0,.35)}
+html.pass .rack .tile.sel{box-shadow:0 0 0 3px var(--sel),0 8px 12px rgba(0,0,0,.4)}
+html.pass .rack .tile.new{box-shadow:0 0 0 2px var(--accent),-1px 2px 3px rgba(0,0,0,.35)}
+html.pass .rack .r1{grid-row:1} html.pass .rack .r2{grid-row:2}
+html.pass .rack .tile-back.in-rack{margin-left:0}
+html.pass .rack-hidden{align-content:start}
+html.pass .rack-hidden .tile-back{box-shadow:inset 0 0 0 2px var(--ivory),-1px 2px 3px rgba(0,0,0,.35)}
+html.pass .rack-empty{grid-column:1 / -1;color:var(--rk-ink);opacity:.85;align-self:center;padding:0 4px}
+html.pass .acts{margin-top:12px}
+html.pass .seg{background:var(--felt-deep)}
+html.pass .seg-b{color:var(--muted)}
+html.pass .seg-b.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px var(--shadow)}
+html.pass .btn.ghost{color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+html.pass .wait,html.pass .hand-to{color:var(--ink)}
+
+/* iPad: the table is laid out from the middle, each set and tile a touch askew (the script sets the small offsets) */
+@media (min-width: 700px){
+  html.pass .table{display:flex;flex-direction:column}
+  html.pass .table > .empty{margin-block:auto}
+  html.pass .sets{margin-block:auto;justify-content:center;align-content:center;align-items:center;gap:0;padding-block:10px}
+  html.pass .set{background:transparent;padding:5px;gap:2px;margin:calc(var(--my, 8px) * var(--mys, 1)) var(--mx, 12px);border-radius:12px;
+    transform:translate(var(--dx, 0px), calc(var(--dy, 0px) * var(--mys, 1))) rotate(var(--r, 0deg))}
+  html.pass .set .tile{transform:translateY(var(--ty, 0px)) rotate(var(--tr, 0deg))}
+  html.pass .set .tile.sel{transform:translateY(-7px)}
+  html.pass .set .add{margin-left:4px}
+  html.pass .sets .newset{margin:8px 12px;border-color:var(--ink)}
+}
+/* iPad on its side: buttons beside the rack instead of under it, so the table keeps its height */
+@media (min-width: 900px) and (orientation: landscape){
+  html.pass .dock{display:grid;grid-template-columns:minmax(0, 1fr) auto;column-gap:18px;align-items:center}
+  html.pass .dock .rack{--side:218px}
+  html.pass .sets{--stw:clamp(40px, 6.2vh, 56px);--mys:.65}
+  html.pass .dock .acts{margin-top:0;flex-direction:column;flex-wrap:nowrap;align-items:stretch;justify-content:center;gap:12px;width:200px}
+  html.pass .dock .acts-r{margin-left:0;flex-direction:column;align-items:stretch}
+  html.pass .dock .seg{align-self:center}
+  html.pass .dock .hand-to{text-align:center}
+  html.pass .dock .btn{white-space:normal;height:auto;min-height:44px;padding-block:8px;line-height:1.2}
+}
+
 @media (prefers-reduced-motion: reduce){
+  html.pass .dock.myturn .rack::before{animation:none}
   .rb-e{animation:none;transform:translate(-50%,-50%)} .rb-name{animation:none;opacity:1} .rb-fall{display:none}
   .pulse{animation:none} .tile{transition:none}
   .dock.myturn{animation:none!important}
@@ -1176,6 +1283,25 @@ const noWrite = () => S.canWrite === false ? E('p', { class: 'note' }, NO_WRITE)
 const passNames = () => E('div', { class: 'pass-names' }, [0, 1].map(i => E('div', { class: 'field' },
   E('label', { for: 'pn' + (i + 1) }, `Speler ${i + 1}`),
   E('input', { id: 'pn' + (i + 1), type: 'text', maxlength: '20', autocomplete: 'off', placeholder: 'Naam', value: S.pn[i] }))));
+/* Organic table (used by the iPad layout only): every set and tile gets a tiny, fixed tilt and offset.
+   The values come from the tile ids, so nothing wobbles when the screen redraws. */
+function h01(str, salt) {
+  let h = 2166136261 ^ salt;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  h ^= h >>> 15; h = Math.imul(h, 2246822507); h ^= h >>> 13;
+  return (h >>> 0) / 4294967296;
+}
+const pm = (str, salt, amp) => (h01(str, salt) * 2 - 1) * amp;
+function loose(node, s) {
+  const k = s.slice().sort()[0] || '';
+  const maxR = Math.min(1.8, 8 / Math.max(1, s.length));
+  /* offsets stay smaller than the margins, so sets never touch */
+  node.style.cssText = `--r:${pm(k, 1, maxR).toFixed(2)}deg;--dx:${pm(k, 2, 6).toFixed(1)}px;--dy:${pm(k, 3, 8).toFixed(1)}px;` +
+    `--mx:${(10 + h01(k, 4) * 20).toFixed(1)}px;--my:${(10 + h01(k, 5) * 8).toFixed(1)}px`;
+}
+function looseTile(t, id) {
+  t.style.cssText = `--tr:${pm(id, 6, 1.3).toFixed(2)}deg;--ty:${pm(id, 7, 1.6).toFixed(1)}px`;
+}
 function setsView() {
   const g = S.G;
   const d = myTurn() ? S.draft : null;
@@ -1189,8 +1315,10 @@ function setsView() {
   const wrap = E('div', { class: 'sets' });
   tbl.forEach((s, i) => {
     const node = E('div', { class: 'set' + ((d || pv) && !setOk(s) ? ' bad' : '') });
+    loose(node, s);
     for (const id of s) {
       const t = tileEl(id, !!d);
+      looseTile(t, id);
       if (d) {
         t.dataset.act = 'tile'; t.dataset.where = 'table'; t.dataset.id = id;
         if (S.sel.has(id)) t.classList.add('sel');
@@ -1291,7 +1419,7 @@ function renderDock() {
     const k = g.seats[g.turn], n = Math.min(count(k), 40);
     dock.className = 'dock band myturn';
     dock.replaceChildren(
-      E('div', { class: 'rack rack-hidden', 'aria-label': `De stenen van ${realName(k)} zijn verborgen` }, Array.from({ length: n }, () => E('span', { class: 'tile-back', 'aria-hidden': 'true' }))),
+      E('div', { class: 'rack rack-hidden', style: `--n2:${Math.max(7, Math.ceil(n / 2))}`, 'aria-label': `De stenen van ${realName(k)} zijn verborgen` }, Array.from({ length: n }, (_, j) => E('span', { class: 'tile-back ' + (j < Math.ceil(n / 2) ? 'r1' : 'r2'), 'aria-hidden': 'true' }))),
       E('div', { class: 'acts' }, E('div', { class: 'hand-to' }, `Geef het apparaat aan ${realName(k)}`),
         E('div', { class: 'acts-r' }, E('button', { class: 'btn primary', 'data-act': 'reveal' }, `Ik ben ${realName(k)}: toon mijn stenen`))));
     return;
@@ -1302,6 +1430,7 @@ function renderDock() {
     const tiles = sortRack(d ? d.rack : hd, S.sort);
     for (const id of tiles) {
       const t = tileEl(id, !!d);
+      t.dataset.rid = id;
       if (d) { t.dataset.act = 'tile'; t.dataset.where = 'rack'; t.dataset.id = id; if (S.sel.has(id)) t.classList.add('sel'); }
       if (id === S.newTile) t.classList.add('new');
       rack.append(t);
@@ -1309,6 +1438,7 @@ function renderDock() {
     if (!tiles.length) rack.append(E('div', { class: 'rack-empty' }, 'Je rek is leeg.'));
     const down = g && g.status === 'playing' ? dblOf(S.key) : null;
     if (down) rack.append(E('button', { class: 'tile-back in-rack', 'data-act': 'dblSheet', 'aria-label': `Dichte steen: ${tileName(down)}. Tik voor meer.` }, E('span', null, 'dicht')));
+    rack.style.setProperty('--n2', String(Math.max(7, Math.ceil((tiles.length + (down ? 1 : 0)) / 2))));
   } else {
     let txt = 'Start een spel om stenen te krijgen.';
     if (S.noDb || !S.ready) txt = 'Je stenen verschijnen hier.';
@@ -1337,6 +1467,36 @@ function renderDock() {
   else if (g && g.status === 'playing' && i >= 0) acts = [E('div', { class: 'wait' }, `${nameOf(g.seats[g.turn])} is aan zet`)];
   else if (g && g.status === 'waiting' && i >= 0) acts = [E('div', { class: 'wait' }, 'Wachten op je tegenspeler')];
   dock.replaceChildren(rack, E('div', { class: 'acts' }, (i >= 0 && hd) ? seg : null, E('div', { class: 'acts-r' }, acts)));
+  if (PASS) splitRack(rack);
+}
+/* Use both ledges of the rack, like a real player would: break between two colour groups (or two numbers when
+   sorted 1–13) as close to the middle as possible, provided both halves fit on a ledge. Otherwise the tiles just
+   fill the top ledge first. */
+function splitRack(rack) {
+  const items = [...rack.querySelectorAll(':scope > .tile, :scope > .tile-back')];
+  const m = items.length;
+  if (m < 2) return;
+  const key = el => {
+    const id = el.dataset.rid;
+    if (!id) return '#';                     /* the face-down double */
+    if (isJ(id)) return 'J';
+    return S.sort === 'num' ? String(num(id)) : col(id);
+  };
+  const keys = items.map(key);
+  const cs = getComputedStyle(rack);
+  const tw = items[0].getBoundingClientRect().width;
+  const gap = parseFloat(cs.columnGap) || 0;
+  const inner = rack.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+  const cap = Math.floor((inner + gap + 0.5) / (tw + gap));
+  if (!(cap > 0) || m > 2 * cap) return;
+  let best = -1, bd = Infinity;
+  for (let b = 1; b < m; b++) {
+    if (keys[b] === keys[b - 1] || Math.max(b, m - b) > cap) continue;
+    const dd = Math.abs(b - m / 2);
+    if (dd < bd) { bd = dd; best = b; }
+  }
+  if (best < 0) return;
+  items.forEach((el, j) => el.classList.add(j < best ? 'r1' : 'r2'));
 }
 function standEl() {
   const t = tally();
@@ -1482,6 +1642,9 @@ document.addEventListener('click', e => {
   else if (a === 'reveal') passReveal();
 });
 document.addEventListener('pointerdown', unlockAudio, { passive: true });
+/* Turning the iPad changes how many tiles fit on a ledge: lay the rack out again. */
+let resizeRaf = 0;
+addEventListener('resize', () => { cancelAnimationFrame(resizeRaf); resizeRaf = requestAnimationFrame(() => { if (PASS) render(); }); });
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'name' || t.id === 'name2') S.nameDraft = t.value;
