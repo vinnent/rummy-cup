@@ -194,7 +194,7 @@ button.tile{cursor:pointer}
 html.pass .band{padding-left:max(16px, env(safe-area-inset-left,0px), calc((100% - 1100px) / 2));padding-right:max(16px, env(safe-area-inset-right,0px), calc((100% - 1100px) / 2))}
 @media (min-width: 700px){
   /* iPad: tiles sized to the screen (an iPad mini gets roughly the same feel as a phone), capped by height in landscape */
-  html.pass .sets{--stw:clamp(40px, min(6.4vw, 6.8vh), 62px)}
+  html.pass .sets,html.pass .fresh-wrap{--stw:calc(clamp(40px, min(6.4vw, 6.8vh), 62px) * var(--fit, 1))}
   html.pass .rack{--rt:clamp(46px, min(7.8vw, 7.2vh), 72px)}
   html.pass .mini .tile,html.pass .ex .tile{--tw:34px}
   html.pass .deco .tile{--tw:52px}
@@ -322,23 +322,44 @@ html.pass .seg-b.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px
 html.pass .btn.ghost{color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
 html.pass .wait,html.pass .hand-to{color:var(--ink)}
 
+/* Adding to a set: the set lights up and gets a round + on its corner. Both float, so picking a tile moves nothing. */
+html.pass .set{position:relative}
+html.pass .set.target{cursor:pointer;background:rgba(240,177,43,.12);box-shadow:0 0 0 1.5px rgba(240,177,43,.75)}
+html.pass .set .add{position:absolute;top:-11px;right:-11px;z-index:3;width:28px;height:28px;padding:0;border:0;border-radius:50%;opacity:1;
+  display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font:800 19px/1 var(--f-ui);box-shadow:0 2px 6px var(--shadow)}
+
+/* Sets made this turn live in their own strip under the table, apart from what was already there */
+.fresh-wrap{--stw:clamp(27px, 8.1vw, 40px);flex:none;padding-block:13px 0}
+.fresh{position:relative;display:flex;align-items:center;justify-content:center;min-height:calc(var(--stw) * 1.34 + 44px);
+  padding:10px 8px 8px;border-radius:14px;border:2px dashed rgba(36,24,14,.3);border-color:color-mix(in srgb, var(--ink) 30%, transparent);
+  background:rgba(255,250,242,.16);background:color-mix(in srgb, var(--card) 18%, transparent)}
+.fresh.target{cursor:pointer;border-color:var(--accent);background:rgba(240,177,43,.18)}
+.fresh-tag{position:absolute;top:-12px;left:14px;padding:5px 10px;border:0;border-radius:999px;background:var(--card);color:var(--muted);
+  font:700 11px/1.2 var(--f-ui);letter-spacing:.06em;text-transform:uppercase;box-shadow:0 1px 3px var(--shadow)}
+button.fresh-tag{cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.fresh-hint{margin:0;padding:0 8px;color:var(--muted);font:500 14px/1.35 var(--f-ui);text-align:center;max-width:62ch}
+.fresh .sets{justify-content:center;align-items:center}
+html.pass .fresh .sets{--mys:.3;margin:0;padding-block:0}
+@media (max-width: 699px){ .fresh-wrap.idle{display:none} }
+
 /* iPad: the table is laid out from the middle, each set and tile a touch askew (the script sets the small offsets) */
 @media (min-width: 700px){
   html.pass .table{display:flex;flex-direction:column}
   html.pass .table > .empty{margin-block:auto}
-  html.pass .sets{margin-block:auto;justify-content:center;align-content:center;align-items:center;gap:0;padding-block:10px}
+  html.pass .sets{margin-block:auto;justify-content:center;align-content:center;align-items:center;gap:0;padding-block:6px}
   html.pass .set{background:transparent;padding:5px;gap:2px;margin:calc(var(--my, 8px) * var(--mys, 1)) var(--mx, 12px);border-radius:12px;
     transform:translate(var(--dx, 0px), calc(var(--dy, 0px) * var(--mys, 1))) rotate(var(--r, 0deg))}
   html.pass .set .tile{transform:translateY(var(--ty, 0px)) rotate(var(--tr, 0deg))}
   html.pass .set .tile.sel{transform:translateY(-7px)}
-  html.pass .set .add{margin-left:4px}
-  html.pass .sets .newset{margin:8px 12px;border-color:var(--ink)}
+  /* fixed height for the message bar, so the centred table does not move up or down when its text changes */
+  html.pass .strip{height:56px;min-height:0;overflow:hidden;align-content:center}
 }
 /* iPad on its side: buttons beside the rack instead of under it, so the table keeps its height */
 @media (min-width: 900px) and (orientation: landscape){
   html.pass .dock{display:grid;grid-template-columns:minmax(0, 1fr) auto;column-gap:18px;align-items:center}
   html.pass .dock .rack{--side:218px}
-  html.pass .sets{--stw:clamp(40px, 6.2vh, 56px);--mys:.65}
+  html.pass .sets,html.pass .fresh-wrap{--stw:calc(clamp(40px, 6.2vh, 56px) * var(--fit, 1))}
+  html.pass .sets{--mys:.65}
   html.pass .dock .acts{margin-top:0;flex-direction:column;flex-wrap:nowrap;align-items:stretch;justify-content:center;gap:12px;width:200px}
   html.pass .dock .acts-r{margin-left:0;flex-direction:column;align-items:stretch}
   html.pass .dock .seg{align-self:center}
@@ -360,6 +381,7 @@ html.pass .wait,html.pass .hand-to{color:var(--ink)}
 <div id="app">
   <header id="top" class="top band"></header>
   <main id="table" class="table band" aria-label="Tafel"></main>
+  <div id="fresh" class="fresh-wrap band" hidden></div>
   <div id="strip" class="strip band"></div>
   <footer id="dock" class="dock band"></footer>
 </div>
@@ -698,7 +720,7 @@ function ensureDraft() {
   const r = S.restore; S.restore = null;
   const back = restoredDraft(r, g, hd, t);
   if (back) { S.draft = back; S.sel.clear(); return; }
-  S.draft = { gameId: g.gameId, turnNo: g.turnNo, startTable: t.map(s => s.slice()), table: t.map(s => s.slice()), startHand: hd.slice(), rack: hd.slice() };
+  S.draft = { gameId: g.gameId, turnNo: g.turnNo, startTable: t.map(s => s.slice()), table: t.map(s => s.slice()), startHand: hd.slice(), rack: hd.slice(), nOld: t.length, looks: t.map(setLook) };
   S.sel.clear();
 }
 /* A half-finished turn kept across a page update (window.claude.hot), used only if it still fits the saved game exactly. */
@@ -712,7 +734,10 @@ function restoredDraft(r, g, hd, t) {
     if (!tbl || rack.length !== (r.rack || []).length || !rack.every(id => hd.includes(id))) return null;
     const played = hd.filter(id => !rack.includes(id));
     if (!same(tbl.flat(), t.flat().concat(played))) return null;
-    return { gameId: g.gameId, turnNo: g.turnNo, startTable: t.map(s => s.slice()), table: tbl, startHand: hd.slice(), rack };
+    const fromStart = new Set(t.flat());
+    let nOld = 0;
+    tbl.forEach((s, i) => { if (s.some(id => fromStart.has(id))) nOld = i + 1; });
+    return { gameId: g.gameId, turnNo: g.turnNo, startTable: t.map(s => s.slice()), table: tbl, startHand: hd.slice(), rack, nOld, looks: tbl.slice(0, nOld).map(setLook) };
   } catch (e) { return null; }
 }
 function result(g) {
@@ -1018,6 +1043,11 @@ function moveTo(target) {
   if (target === 'rack') d.rack.push(...ids);
   else if (target === 'new') d.table.push(arrange(ids));
   else d.table[idx] = arrange(d.table[idx].concat(ids));
+  /* keep track of where the sets made this turn start, also when an older set was emptied */
+  const n0 = oldCount(d);
+  const keep = d.table.slice(0, n0).map(s => s.length > 0);
+  d.nOld = keep.filter(Boolean).length;
+  if (d.looks) d.looks = d.looks.slice(0, n0).filter((_, i) => keep[i]);
   d.table = d.table.filter(s => s.length);
   S.sel.clear(); S.msg = null;
   render(); pushPresence();
@@ -1027,6 +1057,8 @@ function resetDraft() {
   if (!d) return;
   d.table = d.startTable.map(s => s.slice());
   d.rack = d.startHand.slice();
+  d.nOld = d.table.length;
+  d.looks = d.table.map(setLook);
   S.sel.clear(); S.msg = null;
   render(); pushPresence();
 }
@@ -1292,49 +1324,83 @@ function h01(str, salt) {
   return (h >>> 0) / 4294967296;
 }
 const pm = (str, salt, amp) => (h01(str, salt) * 2 - 1) * amp;
-function loose(node, s) {
-  const k = s.slice().sort()[0] || '';
-  const maxR = Math.min(1.8, 8 / Math.max(1, s.length));
+const setLook = s => ({ k: s.slice().sort()[0] || '', n: s.length });
+function loose(node, s, look) {
+  const { k, n } = look || setLook(s);
+  const maxR = Math.min(1.8, 8 / Math.max(1, n));
   /* offsets stay smaller than the margins, so sets never touch */
   node.style.cssText = `--r:${pm(k, 1, maxR).toFixed(2)}deg;--dx:${pm(k, 2, 6).toFixed(1)}px;--dy:${pm(k, 3, 8).toFixed(1)}px;` +
-    `--mx:${(10 + h01(k, 4) * 20).toFixed(1)}px;--my:${(10 + h01(k, 5) * 8).toFixed(1)}px`;
+    `--mx:${(10 + h01(k, 4) * 20).toFixed(1)}px;--my:${(6 + h01(k, 5) * 7).toFixed(1)}px`;
 }
 function looseTile(t, id) {
   t.style.cssText = `--tr:${pm(id, 6, 1.3).toFixed(2)}deg;--ty:${pm(id, 7, 1.6).toFixed(1)}px`;
 }
+/* One set on the table. While you have tiles picked, a set you may add to lights up: tap the set itself or the
+   round + on its corner. Neither takes up room, so nothing on the table moves when you pick a tile. */
+function setNode(s, i, d, pv, recent) {
+  const st = d ? new Set(d.startTable.flat()) : null;
+  const mine = d ? new Set(d.startHand) : null;
+  const can = !!(d && S.sel.size && (melded() || !s.some(id => st.has(id))));
+  const node = E('div', { class: 'set' + ((d || pv) && !setOk(s) ? ' bad' : '') + (can ? ' target' : '') });
+  /* during your turn a set that was already on the table keeps the look it had at the start of the turn */
+  loose(node, s, d && i < oldCount(d) && d.looks ? d.looks[i] : null);
+  if (can) { node.dataset.act = 'to'; node.dataset.target = String(i); }
+  for (const id of s) {
+    const t = tileEl(id, !!d);
+    looseTile(t, id);
+    if (d) {
+      t.dataset.act = 'tile'; t.dataset.where = 'table'; t.dataset.id = id;
+      if (S.sel.has(id)) t.classList.add('sel');
+      if (mine.has(id)) t.classList.add('mine');
+    }
+    if (!pv && recent.has(id)) t.classList.add('recent');
+    node.append(t);
+  }
+  if (can) node.append(E('button', { class: 'add', 'data-act': 'to', 'data-target': String(i), 'aria-label': 'Leg de gekozen stenen hier aan' }, '+'));
+  return node;
+}
+/* How many sets at the front of the draft table were already there when the turn started.
+   Everything after that was made this turn and is shown in its own strip (renderFresh). */
+function oldCount(d) { return Math.min(d.table.length, typeof d.nOld === 'number' ? d.nOld : d.startTable.length); }
 function setsView() {
   const g = S.G;
   const d = myTurn() ? S.draft : null;
   const pv = d ? null : livePreview();
-  const tbl = d ? d.table : (pv || tableOf(g));
-  const st = d ? new Set(d.startTable.flat()) : null;
-  const mine = d ? new Set(d.startHand) : null;
+  const tbl = d ? d.table.slice(0, oldCount(d)) : (pv || tableOf(g));
   const recent = new Set(g.last && g.last.kind === 'play' && g.last.key !== S.key && Array.isArray(g.last.ids) ? g.last.ids : []);
   const out = [];
   if (pv) out.push(E('div', { class: 'live-badge' }, E('i', { class: 'pulse' }), 'Live'));
   const wrap = E('div', { class: 'sets' });
-  tbl.forEach((s, i) => {
-    const node = E('div', { class: 'set' + ((d || pv) && !setOk(s) ? ' bad' : '') });
-    loose(node, s);
-    for (const id of s) {
-      const t = tileEl(id, !!d);
-      looseTile(t, id);
-      if (d) {
-        t.dataset.act = 'tile'; t.dataset.where = 'table'; t.dataset.id = id;
-        if (S.sel.has(id)) t.classList.add('sel');
-        if (mine.has(id)) t.classList.add('mine');
-      }
-      if (!pv && recent.has(id)) t.classList.add('recent');
-      node.append(t);
-    }
-    if (d && S.sel.size && (melded() || !s.some(id => st.has(id))))
-      node.append(E('button', { class: 'add', 'data-act': 'to', 'data-target': String(i), 'aria-label': 'Leg de gekozen stenen hier aan' }, '+'));
-    wrap.append(node);
-  });
-  if (d && S.sel.size) wrap.append(E('button', { class: 'newset', 'data-act': 'to', 'data-target': 'new' }, '+ Nieuwe reeks'));
-  if (!wrap.children.length) out.push(E('p', { class: 'empty' }, g.status === 'over' ? 'De tafel is leeg.' : 'De tafel is nog leeg. Wie het eerst uitkomt, legt hier de eerste reeksen neer.'));
+  tbl.forEach((s, i) => wrap.append(setNode(s, i, d, pv, recent)));
+  if (!wrap.children.length) out.push(E('p', { class: 'empty' }, g.status === 'over' ? 'De tafel is leeg.'
+    : d ? 'De tafel is nog leeg. Je nieuwe reeksen komen in de strook hieronder; na Klaar liggen ze hier.'
+    : 'De tafel is nog leeg. Wie het eerst uitkomt, legt hier de eerste reeksen neer.'));
   else out.push(wrap);
   return out;
+}
+/* The strip for sets made this turn: below the table, so making a new set never pushes the old ones around.
+   On a tablet it is there for the whole turn (the table is centred, so a strip popping up would shift it);
+   on a phone the table hangs from the top and the strip only shows when it is needed. */
+function renderFresh() {
+  const el = $('#fresh');
+  const g = S.G;
+  const d = (g && g.status === 'playing') ? (myTurn() ? S.draft : null) : null;
+  if (!d) { el.hidden = true; el.replaceChildren(); return; }
+  const n0 = oldCount(d), picking = S.sel.size > 0;
+  const fresh = d.table.slice(n0);
+  const box = E('div', { class: 'fresh' + (picking ? ' target' : '') + (fresh.length ? '' : ' none') });
+  if (picking) { box.dataset.act = 'to'; box.dataset.target = 'new'; }
+  box.append(picking
+    ? E('button', { class: 'fresh-tag', 'data-act': 'to', 'data-target': 'new' }, '+ Nieuwe reeks')
+    : E('span', { class: 'fresh-tag' }, 'Nieuw deze beurt'));
+  if (fresh.length) {
+    const wrap = E('div', { class: 'sets' });
+    fresh.forEach((s, j) => wrap.append(setNode(s, n0 + j, d, null, new Set())));
+    box.append(wrap);
+  } else box.append(E('p', { class: 'fresh-hint' }, picking ? 'Tik hier om er een nieuwe reeks van te maken.' : 'Nieuwe reeksen leg je hier neer. Na Klaar gaan ze naar de tafel.'));
+  el.className = 'fresh-wrap band' + (fresh.length || picking ? '' : ' idle');
+  el.hidden = false;
+  el.replaceChildren(box);
 }
 function renderTable() {
   const g = S.G, kids = [];
@@ -1427,7 +1493,7 @@ function renderDock() {
   dock.className = 'dock band' + (d ? ' myturn' : '');
   const rack = E('div', { class: 'rack', 'aria-label': 'Jouw rek' });
   if (i >= 0 && hd) {
-    const tiles = sortRack(d ? d.rack : hd, S.sort);
+    const tiles = sortRack(d ? d.rack : hd, sortMode());
     for (const id of tiles) {
       const t = tileEl(id, !!d);
       t.dataset.rid = id;
@@ -1448,9 +1514,10 @@ function renderDock() {
     else if (g && i >= 0) txt = 'Je stenen zijn op dit apparaat niet gevonden. Start via het menu een nieuw spel.';
     rack.append(E('div', { class: 'rack-empty' }, txt));
   }
+  const so = sortMode();
   const seg = E('div', { class: 'seg', role: 'group', 'aria-label': 'Rek sorteren' },
-    E('button', { class: 'seg-b' + (S.sort === 'color' ? ' on' : ''), 'data-act': 'sort', 'data-mode': 'color', 'aria-pressed': S.sort === 'color' ? 'true' : 'false' }, 'Kleur'),
-    E('button', { class: 'seg-b' + (S.sort === 'num' ? ' on' : ''), 'data-act': 'sort', 'data-mode': 'num', 'aria-pressed': S.sort === 'num' ? 'true' : 'false' }, '1–13'));
+    E('button', { class: 'seg-b' + (so === 'color' ? ' on' : ''), 'data-act': 'sort', 'data-mode': 'color', 'aria-pressed': so === 'color' ? 'true' : 'false' }, 'Kleur'),
+    E('button', { class: 'seg-b' + (so === 'num' ? ' on' : ''), 'data-act': 'sort', 'data-mode': 'num', 'aria-pressed': so === 'num' ? 'true' : 'false' }, '1–13'));
   let acts = [];
   if (d) {
     const played = d.startHand.length - d.rack.length;
@@ -1480,7 +1547,7 @@ function splitRack(rack) {
     const id = el.dataset.rid;
     if (!id) return '#';                     /* the face-down double */
     if (isJ(id)) return 'J';
-    return S.sort === 'num' ? String(num(id)) : col(id);
+    return sortMode() === 'num' ? String(num(id)) : col(id);
   };
   const keys = items.map(key);
   const cs = getComputedStyle(rack);
@@ -1497,6 +1564,23 @@ function splitRack(rack) {
   }
   if (best < 0) return;
   items.forEach((el, j) => el.classList.add(j < best ? 'r1' : 'r2'));
+}
+/* Rack sorting (Kleur / 1–13). In pass-and-play every player keeps their own choice, saved under their name,
+   so it does not flip back when the device is handed over, and it is still there in the next game. */
+function sortKey() {
+  if (!PASS || !S.G || !S.key) return null;
+  const n = realName(S.key).trim().toLowerCase();
+  return n ? 'rc-sort-p:' + n : null;
+}
+function sortMode() {
+  const k = sortKey();
+  if (!k) return S.sort;
+  return store.get(k) === 'num' ? 'num' : 'color';
+}
+function setSort(mode) {
+  const k = sortKey();
+  if (k) store.set(k, mode);
+  else { S.sort = mode; store.set('rc-sort', mode); }
 }
 function standEl() {
   const t = tally();
@@ -1597,12 +1681,27 @@ function renderSheet() {
   wrap.hidden = false;
   wrap.replaceChildren(E('div', { class: 'scrim', 'data-act': 'close' }), E('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true' }, body));
 }
+/* Tablet: when the table does not fit, the tiles get a little smaller (down to about 70%). Worked out once per
+   turn, view and screen size, never in the middle of a turn, so laying tiles never makes the table resize. */
+let fitKey = '', fitNow = 1;
+function setFit(f) { fitNow = f; document.documentElement.style.setProperty('--fit', f.toFixed(2)); }
+function fitTable() {
+  const g = S.G, tb = $('#table');
+  if (!PASS || !g || innerWidth < 700 || !tb.querySelector('.sets')) { if (fitNow !== 1) setFit(1); fitKey = ''; return; }
+  const key = [S.view, g.gameId, g.turnNo, g.status, innerWidth, innerHeight].join(':');
+  if (key === fitKey) return;
+  fitKey = key;
+  let f = 1;
+  setFit(f);
+  while (tb.scrollHeight > tb.clientHeight + 1 && f > 0.72) { f -= 0.04; setFit(f); }
+}
 function render() {
   const ae = document.activeElement;
   const fid = ae && ae.id;
   let s0 = null, s1 = null;
   if (fid && ae.tagName === 'INPUT') { try { s0 = ae.selectionStart; s1 = ae.selectionEnd; } catch (e) {} }
-  renderTop(); renderTable(); renderStrip(); renderDock(); renderSheet();
+  renderTop(); renderTable(); renderFresh(); renderStrip(); renderDock(); renderSheet();
+  fitTable();
   if (fid) {
     const n = document.getElementById(fid);
     if (n && n !== document.activeElement) {
@@ -1621,7 +1720,7 @@ document.addEventListener('click', e => {
   if (a === 'tile') tapTile(n.dataset.id, n.dataset.where);
   else if (a === 'to') moveTo(n.dataset.target);
   else if (a === 'desel') { S.sel.clear(); render(); }
-  else if (a === 'sort') { S.sort = n.dataset.mode === 'num' ? 'num' : 'color'; store.set('rc-sort', S.sort); render(); }
+  else if (a === 'sort') { setSort(n.dataset.mode === 'num' ? 'num' : 'color'); render(); }
   else if (a === 'reset') resetDraft();
   else if (a === 'play') play();
   else if (a === 'draw') draw();
