@@ -1,7 +1,10 @@
-/* Rummy Cup Samen: keeps the game on the device so it opens without internet. */
-const APP = 'rummy-app-1c17760a53';
-const FONTS = 'rummy-fonts';
-const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
+/* Keeps Rummy Cup Samen on the device so it opens without internet.
+   Only answers for its own files: other apps on this site have their own copy-keeper. */
+const PREFIX = 'rummy-';
+const APP = PREFIX + 'app-95d51f3166';
+const FONTS = PREFIX + 'fonts';
+const SHELL = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
+const OWN = new Set(SHELL.map(p => new URL(p, self.registration.scope).pathname));
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(APP).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -9,7 +12,7 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(k => k !== APP && k !== FONTS).map(k => caches.delete(k))))
+    .then(keys => Promise.all(keys.filter(k => k.startsWith(PREFIX + 'app-') && k !== APP).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 
@@ -27,10 +30,10 @@ self.addEventListener('fetch', e => {
     }));
     return;
   }
-  if (url.origin !== location.origin) return;
-  /* The game itself: answer from the device at once; when online, fetch a fresh copy for next time. */
+  if (url.origin !== location.origin || !OWN.has(url.pathname)) return;
+  /* Answer from the device at once; when online, fetch a fresh copy for next time. */
   e.respondWith(caches.open(APP).then(async c => {
-    const hit = (await c.match(req, { ignoreSearch: true })) || (req.mode === 'navigate' ? await c.match('index.html') : null);
+    const hit = await c.match(req, { ignoreSearch: true });
     const fresh = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => null);
     if (hit) { e.waitUntil(fresh); return hit; }
     return (await fresh) || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });

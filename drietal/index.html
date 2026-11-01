@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Drietal">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#17312c">
+<title>Drietal</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700&family=Rubik:wght@700;800&display=swap">
+<style>
+/* Layout: the iPad lies flat between two players. Each player has a band at their own edge
+   (the top one turned upside down), the cards lie in the middle, the stack and +3 sit at the side. */
+:root{
+  --felt:#17312c; --felt-2:#1f3d37; --felt-3:#29504a; --edge:#0e221e;
+  --ink:#eef3ef; --muted:#9fb7ae; --card:#fbf8ef; --card-edge:#d9cfb8;
+  --c0:#1f63c9; --c1:#e2780c; --c2:#d4237f;
+  --p0:#f0b12b; --p1:#5fd3c3; --p-ink:#13201b;
+  --bad:#ff6d61; --shadow:rgba(0,0,0,.45);
+  --f-display:"Rubik","Arial Black",system-ui,sans-serif;
+  --f-ui:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--felt);color:var(--ink);overflow:hidden}
+body{font:500 15px/1.4 var(--f-ui);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;
+  background:var(--felt) radial-gradient(120% 90% at 50% 50%, var(--felt-2) 0 40%, var(--felt) 75%, var(--edge) 100%)}
+button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--p0);outline-offset:2px}
+[hidden]{display:none!important}
+
+#app{height:100%;display:grid;grid-template-rows:auto 1fr auto;
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+
+/* Player bands */
+.zone{--pc:var(--p0);display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:14px;
+  padding:12px max(16px, 2.2vw);min-height:clamp(78px, 12vh, 112px);background:rgba(0,0,0,.18)}
+.zone[data-p="1"]{--pc:var(--p1);transform:rotate(180deg)}
+.z-who{min-width:0;display:flex;flex-direction:column;gap:2px}
+.z-name{font:800 clamp(20px, 2.6vw, 28px)/1.1 var(--f-display);color:var(--pc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.z-msg{font:600 clamp(14px, 1.7vw, 17px)/1.3 var(--f-ui);color:var(--ink);min-height:1.3em}
+.z-msg.dim{color:var(--muted);font-weight:500}
+.z-score{display:flex;flex-direction:column;align-items:center;line-height:1;min-width:64px}
+.z-score b{font:800 clamp(30px, 4.4vw, 46px)/1 var(--f-display);font-variant-numeric:tabular-nums}
+.z-score span{font:700 11px var(--f-ui);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-top:4px}
+.z-score.bump b{animation:bump .5s cubic-bezier(.3,1.8,.5,1)}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.5)}100%{transform:scale(1)}}
+.z-btn{height:clamp(56px, 8vh, 72px);min-width:clamp(120px, 15vw, 170px);padding:0 22px;border:0;border-radius:999px;
+  background:var(--pc);color:var(--p-ink);font:800 clamp(22px, 2.8vw, 30px)/1 var(--f-display);letter-spacing:.01em;
+  box-shadow:0 4px 0 rgba(0,0,0,.35),0 10px 22px var(--shadow)}
+.z-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.35),0 4px 10px var(--shadow)}
+.z-btn.quiet{background:transparent;color:var(--pc);box-shadow:inset 0 0 0 3px var(--pc);font-size:clamp(17px, 2vw, 21px)}
+.z-btn:disabled{opacity:.3;cursor:default}
+.zone.claiming{background:color-mix(in srgb, var(--pc) 22%, transparent);box-shadow:inset 0 0 0 3px var(--pc)}
+
+/* Table */
+.board{min-height:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:10px max(12px, 1.6vw)}
+.grid{min-width:0;min-height:0;display:flex;align-items:center;justify-content:center}
+.cards{display:grid;grid-template-columns:repeat(var(--cols,4), var(--cw,150px));gap:var(--gap,12px);justify-content:center;align-content:center}
+.card{width:var(--cw,150px);aspect-ratio:3/2;padding:0;border:0;border-radius:calc(var(--cw,150px) * .09);
+  background:linear-gradient(180deg,var(--card) 0 82%,var(--card-edge));box-shadow:0 2px 0 var(--card-edge),0 6px 14px var(--shadow);
+  display:grid;place-items:center;transition:transform .12s ease, box-shadow .12s ease}
+.card svg{width:92%;height:92%;display:block}
+.card.sel{transform:scale(1.05);box-shadow:0 0 0 calc(var(--cw,150px) * .035) var(--pc, var(--p0)),0 10px 22px var(--shadow)}
+.card.hint{transform:scale(1.06);box-shadow:0 0 0 calc(var(--cw,150px) * .045) #fff,0 0 34px rgba(255,255,255,.75);animation:hint .7s ease-in-out infinite alternate}
+@keyframes hint{from{transform:scale(1.06)}to{transform:scale(.98)}}
+.card.nope{animation:nope .45s ease-in-out;box-shadow:0 0 0 calc(var(--cw,150px) * .035) var(--bad),0 6px 14px var(--shadow)}
+@keyframes nope{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+.card.go0{animation:go0 .45s ease-in forwards}
+.card.go1{animation:go1 .45s ease-in forwards}
+@keyframes go0{to{transform:translateY(60px) scale(.6);opacity:0}}
+@keyframes go1{to{transform:translateY(-60px) scale(.6);opacity:0}}
+.card.deal{animation:deal .4s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes deal{from{transform:scale(.5) rotate(-8deg);opacity:0}to{transform:none;opacity:1}}
+
+/* Symbols */
+.sym .s0{fill:var(--c0);stroke:var(--c0)} .sym .s1{fill:var(--c1);stroke:var(--c1)} .sym .s2{fill:var(--c2);stroke:var(--c2)}
+.sym .f1.s0{fill:url(#st0)} .sym .f1.s1{fill:url(#st1)} .sym .f1.s2{fill:url(#st2)}
+.sym .f2{fill:none}
+#st0 rect{fill:var(--c0)} #st1 rect{fill:var(--c1)} #st2 rect{fill:var(--c2)}
+
+/* Side: the stack and the controls */
+.side{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;width:clamp(58px, 7vw, 76px)}
+.stack{display:flex;flex-direction:column;align-items:center;gap:4px;font:800 20px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.stack i{width:34px;height:23px;border-radius:5px;background:var(--card);box-shadow:3px -3px 0 var(--card-edge),6px -6px 0 rgba(217,207,184,.6)}
+.round{width:clamp(52px, 6vw, 64px);height:clamp(52px, 6vw, 64px);border-radius:50%;border:0;background:var(--felt-3);color:var(--ink);
+  display:grid;place-items:center;font:800 19px/1 var(--f-display);box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.round:active{transform:translateY(2px)}
+.round svg{width:26px;height:26px;fill:currentColor}
+
+/* Center sheet: setup, menu, rules, confirm */
+#sheet{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:rgba(5,12,10,.55);
+  padding:max(16px, env(safe-area-inset-top,0px)) max(16px, env(safe-area-inset-right,0px)) max(16px, env(safe-area-inset-bottom,0px)) max(16px, env(safe-area-inset-left,0px))}
+.sheet{width:min(520px, 100%);max-height:100%;overflow:auto;background:var(--felt-2);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:14px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.06),0 24px 60px rgba(0,0,0,.5);-webkit-user-select:text;user-select:text}
+.sheet h1,.sheet h2{margin:0;font:800 30px/1.1 var(--f-display);text-wrap:balance}
+.sheet h2{font-size:24px}
+.sheet p{margin:0;color:var(--muted);max-width:60ch}
+.sheet ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;max-width:62ch}
+.names{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width: 460px){ .names{grid-template-columns:1fr} }
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label{font:700 11px var(--f-ui);text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.field input{height:48px;border-radius:12px;border:2px solid var(--felt-3);background:var(--felt);color:var(--ink);padding:0 12px;font:600 17px var(--f-ui);width:100%}
+.field.f0 input{border-color:color-mix(in srgb, var(--p0) 60%, transparent)}
+.field.f1 input{border-color:color-mix(in srgb, var(--p1) 60%, transparent)}
+.acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.btn{height:48px;padding:0 20px;border-radius:12px;border:0;font:700 16px var(--f-ui)}
+.btn.primary{background:var(--p0);color:var(--p-ink)}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px var(--felt-3)}
+.btn.wide{width:100%}
+.menu{display:flex;flex-direction:column}
+.menu button{height:54px;text-align:left;border:0;border-bottom:1px solid var(--felt-3);background:transparent;font:600 17px var(--f-ui);padding:0 2px}
+.ex{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:14px}
+.ex .card{--cw:76px;pointer-events:none}
+.tally{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:14px}
+.tally b{color:var(--ink);font:800 18px var(--f-display)}
+
+/* Winner rainbow */
+#fx{position:fixed;inset:0;z-index:30;pointer-events:none;overflow:hidden;transition:opacity .6s}
+#fx.fade{opacity:0}
+.rb-e,.rb-fall{position:absolute;line-height:1;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+.rb-e{font-size:var(--fs);transform:translate(-50%,-50%) scale(0);animation:rbpop .5s cubic-bezier(.3,1.7,.5,1) forwards}
+@keyframes rbpop{to{transform:translate(-50%,-50%) scale(1)}}
+.rb-name{position:absolute;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:999px;background:var(--p0);color:var(--p-ink);
+  font:800 22px/1.1 var(--f-display);white-space:nowrap;box-shadow:0 8px 24px var(--shadow);opacity:0;animation:rbname .5s 1.4s cubic-bezier(.3,1.6,.5,1) forwards}
+@keyframes rbname{from{opacity:0;transform:translateX(-50%) translateY(10px) scale(.8)}to{opacity:1;transform:translateX(-50%)}}
+.rb-fall{top:-48px;font-size:30px;animation:rbfall linear both}
+@keyframes rbfall{from{transform:translateY(0) rotate(0)}to{transform:translateY(calc(100vh + 96px)) rotate(var(--r))}}
+
+@media (max-width: 560px){
+  .zone{grid-template-columns:minmax(0,1fr) auto auto;gap:10px;padding:10px 14px}
+  .z-score{min-width:44px}
+  .z-btn{min-width:96px;padding:0 16px}
+  .side{width:52px}
+}
+@media (prefers-reduced-motion: reduce){
+  .card,.card.deal,.card.nope,.card.hint,.card.go0,.card.go1,.z-score.bump b{animation:none!important;transition:none}
+  .card.go0,.card.go1{opacity:0}
+  .rb-e{animation:none;transform:translate(-50%,-50%)} .rb-name{animation:none;opacity:1} .rb-fall{display:none}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <pattern id="st0" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="2.6" height="7"/></pattern>
+  <pattern id="st1" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="2.6" height="7"/></pattern>
+  <pattern id="st2" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="2.6" height="7"/></pattern>
+</defs></svg>
+<div id="app">
+  <section class="zone" id="z1" data-p="1" aria-label="Speler boven"></section>
+  <main class="board" aria-label="Tafel">
+    <div class="grid" id="grid"><div class="cards" id="cards"></div></div>
+    <aside class="side" id="side"></aside>
+  </main>
+  <section class="zone" id="z0" data-p="0" aria-label="Speler onder"></section>
+</div>
+<div id="sheet" hidden></div>
+<div id="fx" aria-hidden="true"></div>
+
+<script>
+/* Game logic. A card is a number 0..80; its four features are its digits in base 3:
+   count (1-3), shape (rondje, vierkant, kruis), filling (vol, gestreept, leeg), colour (blauw, oranje, roze).
+   Three cards form a set when every feature is all the same or all different, i.e. the digits sum to 0 mod 3. */
+window.DT = (() => {
+  const feat = id => [id % 3, Math.floor(id / 3) % 3, Math.floor(id / 9) % 3, Math.floor(id / 27) % 3];
+  function isSet(a, b, c) {
+    if (a === b || b === c || a === c) return false;
+    const A = feat(a), B = feat(b), C = feat(c);
+    return A.every((x, k) => (x + B[k] + C[k]) % 3 === 0);
+  }
+  function findSet(board) {
+    for (let i = 0; i < board.length; i++)
+      for (let j = i + 1; j < board.length; j++)
+        for (let k = j + 1; k < board.length; k++)
+          if (isSet(board[i], board[j], board[k])) return [i, j, k];
+    return null;
+  }
+  function shuffle(a) {
+    const r = new Uint32Array(1);
+    for (let i = a.length - 1; i > 0; i--) {
+      try { crypto.getRandomValues(r); } catch (e) { r[0] = Math.floor(Math.random() * 4294967296); }
+      const j = r[0] % (i + 1); const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  const fullDeck = () => Array.from({ length: 81 }, (_, i) => i);
+  return { feat, isSet, findSet, shuffle, fullDeck };
+})();
+</script>
+
+<script>
+(() => {
+const { feat, isSet, findSet, shuffle, fullDeck } = window.DT;
+const SHAPES = ['rondje', 'vierkant', 'kruis'], SHAPES_N = ['rondjes', 'vierkanten', 'kruisen'];
+const COLORS = ['blauw', 'oranje', 'roze'], FILLS = ['vol', 'gestreept', 'leeg'];
+const KEY = 'drietal-v1';
+const $ = s => document.querySelector(s);
+const store = {
+  get() { try { const v = localStorage.getItem(KEY); return v ? JSON.parse(v) : null; } catch (e) { return null; } },
+  set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} }
+};
+
+/* Saved on the device: the game itself. Not saved: who is choosing right now. */
+let G = sane(store.get()) || { v: 1, status: 'setup', names: ['', ''], deck: [], board: [], scores: [0, 0], wins: [0, 0], draws: 0 };
+const T = { claim: null, sel: [], msg: [null, null], msgTimer: [0, 0], busy: false, sheet: null, nameDraft: G.names.slice(),
+  fx: new Map(), hintAt: 0, bump: null, lastCols: 0 };
+if (G.status === 'setup') T.sheet = 'setup';
+
+function sane(g) {
+  try {
+    if (!g || g.v !== 1 || !Array.isArray(g.board) || !Array.isArray(g.deck)) return null;
+    const ids = g.board.concat(g.deck);
+    if (!ids.every(x => Number.isInteger(x) && x >= 0 && x < 81) || new Set(ids).size !== ids.length) return null;
+    if (!Array.isArray(g.names) || g.names.length !== 2 || !Array.isArray(g.scores) || !Array.isArray(g.wins)) return null;
+    return g;
+  } catch (e) { return null; }
+}
+const save = () => store.set(G);
+const nm = i => (G.names[i] || '').trim() || (i ? 'Boven' : 'Onder');
+
+/* ---------- drawing ---------- */
+function E(tag, attrs, ...kids) {
+  const n = document.createElement(tag);
+  if (tag === 'button') n.type = 'button';
+  if (attrs) for (const k in attrs) {
+    const v = attrs[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') n.className = v;
+    else if (k === 'html') n.innerHTML = v;
+    else if (k === 'disabled') n.disabled = true;
+    else n.setAttribute(k, v === true ? '' : String(v));
+  }
+  for (const c of kids.flat(Infinity)) if (c != null && c !== false && c !== '') n.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  return n;
+}
+function plus(x) { return `M${x - 6} 32H${x + 6}V44H${x + 18}V56H${x + 6}V68H${x - 6}V56H${x - 18}V44H${x - 6}Z`; }
+function cardSVG(id) {
+  const [n, shape, fill, color] = feat(id);
+  const xs = [[75], [54, 96], [33, 75, 117]][n];
+  const cls = `s${color} f${fill}`;
+  const sym = x => shape === 0 ? `<circle cx="${x}" cy="50" r="17"/>`
+    : shape === 1 ? `<rect x="${x - 16}" y="34" width="32" height="32" rx="5"/>`
+    : `<path d="${plus(x)}"/>`;
+  return `<svg viewBox="0 0 150 100" class="sym" aria-hidden="true"><g class="${cls}" stroke-width="4" stroke-linejoin="round">${xs.map(sym).join('')}</g></svg>`;
+}
+function cardLabel(id) {
+  const [n, shape, fill, color] = feat(id);
+  return `${n + 1} ${n ? SHAPES_N[shape] : SHAPES[shape]}, ${COLORS[color]}, ${FILLS[fill]}`;
+}
+function cardEl(id, i) {
+  const b = E('button', { class: 'card', 'data-act': 'card', 'data-i': i, 'aria-label': cardLabel(id), html: cardSVG(id) });
+  if (T.sel.includes(i)) { b.classList.add('sel'); b.style.setProperty('--pc', `var(--p${T.claim})`); }
+  const fx = T.fx.get(i);
+  if (fx) b.classList.add(fx);
+  return b;
+}
+
+/* Fit all open cards as large as possible in the space between the two bands. */
+function layout() {
+  const wrap = $('#grid'), cards = $('#cards');
+  const W = wrap.clientWidth, H = wrap.clientHeight, n = Math.max(G.board.length, 1);
+  if (!W || !H) return;
+  const gap = Math.max(8, Math.min(16, Math.round(Math.min(W, H) / 45)));
+  let best = { cw: 0, cols: 1 };
+  for (let c = 1; c <= n; c++) {
+    const r = Math.ceil(n / c);
+    const cw = Math.min((W - (c - 1) * gap) / c, ((H - (r - 1) * gap) / r) * 1.5);
+    if (cw > best.cw) best = { cw, cols: c };
+  }
+  cards.style.setProperty('--cw', Math.floor(Math.min(best.cw, 260)) + 'px');
+  cards.style.setProperty('--cols', best.cols);
+  cards.style.setProperty('--gap', gap + 'px');
+}
+
+function zoneEl(i) {
+  const z = $('#z' + i);
+  const claiming = T.claim === i, other = T.claim !== null && T.claim !== i;
+  z.className = 'zone' + (claiming ? ' claiming' : '');
+  let btn;
+  if (G.status === 'over') btn = E('button', { class: 'z-btn quiet', 'data-act': 'askNew' }, 'Nieuw spel');
+  else if (G.status !== 'playing') btn = E('button', { class: 'z-btn', disabled: true }, 'Set!');
+  else if (claiming) btn = E('button', { class: 'z-btn quiet', 'data-act': 'claim', 'data-p': i }, 'Annuleer');
+  else btn = E('button', { class: 'z-btn', 'data-act': 'claim', 'data-p': i, disabled: other || T.busy }, 'Set!');
+  const m = T.msg[i];
+  let msg = m, dim = false;
+  if (!msg) {
+    dim = true;
+    if (G.status === 'over') msg = overText(i);
+    else if (G.status !== 'playing') msg = '';
+    else if (claiming) { msg = T.sel.length ? `Nog ${3 - T.sel.length} ${3 - T.sel.length === 1 ? 'kaart' : 'kaarten'} kiezen` : 'Kies je drie kaarten'; dim = false; }
+    else if (other) msg = `${nm(T.claim)} kiest…`;
+    else msg = 'Roep Set! en tik op je knop';
+  }
+  const score = E('div', { class: 'z-score' + (T.bump === i ? ' bump' : '') }, E('b', null, String(G.scores[i] || 0)), E('span', null, (G.scores[i] || 0) === 1 ? 'set' : 'sets'));
+  z.replaceChildren(
+    E('div', { class: 'z-who' }, E('div', { class: 'z-name' }, nm(i)), E('div', { class: 'z-msg' + (dim ? ' dim' : '') }, msg)),
+    score, btn);
+}
+function overText(i) {
+  const [a, b] = G.scores;
+  if (a === b) return `Gelijkspel, ${a} tegen ${b}.`;
+  const w = a > b ? 0 : 1;
+  return w === i ? `Je wint met ${G.scores[w]} tegen ${G.scores[1 - w]}!` : `${nm(w)} wint met ${G.scores[w]} tegen ${G.scores[1 - w]}.`;
+}
+const PLUS_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4h3v6.5H20v3h-6.5V20h-3v-6.5H4v-3h6.5z"/></svg>';
+const MENU_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg>';
+function sideEl() {
+  $('#side').replaceChildren(
+    E('div', { class: 'stack', title: 'Kaarten in de stapel', 'aria-label': `${G.deck.length} kaarten in de stapel` }, E('i'), String(G.deck.length)),
+    E('button', { class: 'round', 'data-act': 'more', 'aria-label': 'Geen set te zien: drie kaarten erbij', title: 'Geen set? Drie kaarten erbij', disabled: G.status !== 'playing' || T.claim !== null || T.busy, html: PLUS_ICON }),
+    E('button', { class: 'round', 'data-act': 'menu', 'aria-label': 'Menu', html: MENU_ICON }));
+}
+function render() {
+  zoneEl(0); zoneEl(1); sideEl();
+  $('#cards').replaceChildren(...G.board.map(cardEl));
+  layout();
+  renderSheet();
+}
+
+/* ---------- sheets ---------- */
+const exCards = (ids, label) => E('div', { class: 'ex' }, ids.map(id => { const c = E('div', { class: 'card', html: cardSVG(id) }); return c; }), E('span', null, label));
+function renderSheet() {
+  const wrap = $('#sheet');
+  if (!T.sheet) { wrap.hidden = true; wrap.replaceChildren(); return; }
+  let body = [];
+  if (T.sheet === 'setup' || T.sheet === 'names') body = [
+    E('h1', null, 'Drietal'),
+    E('p', null, 'Leg de iPad plat tussen jullie in. Wie onder zit, heeft de knop aan de kant van de gele naam. Wie boven zit, leest alles ondersteboven en dus precies goed.'),
+    E('div', { class: 'names' },
+      E('div', { class: 'field f0' }, E('label', { for: 'n0' }, 'Naam onder'), E('input', { id: 'n0', type: 'text', maxlength: '16', autocomplete: 'off', placeholder: 'Naam', value: T.nameDraft[0] || '' })),
+      E('div', { class: 'field f1' }, E('label', { for: 'n1' }, 'Naam boven'), E('input', { id: 'n1', type: 'text', maxlength: '16', autocomplete: 'off', placeholder: 'Naam', value: T.nameDraft[1] || '' }))),
+    E('div', { class: 'acts' },
+      T.sheet === 'names' ? E('button', { class: 'btn ghost', 'data-act': 'close' }, 'Annuleren') : E('button', { class: 'btn ghost', 'data-act': 'rules' }, 'Hoe werkt het?'),
+      E('button', { class: 'btn primary', 'data-act': 'start' }, 'Start spel'))];
+  else if (T.sheet === 'menu') body = [E('h2', null, 'Menu'),
+    (G.wins[0] || G.wins[1] || G.draws) ? E('div', { class: 'tally' }, E('span', null, 'Gewonnen potjes'), E('span', null, nm(0) + ' ', E('b', null, String(G.wins[0] || 0))), E('span', null, nm(1) + ' ', E('b', null, String(G.wins[1] || 0)))) : null,
+    E('div', { class: 'menu' },
+      E('button', { 'data-act': 'askNew' }, 'Nieuw spel'),
+      E('button', { 'data-act': 'names' }, 'Andere namen'),
+      E('button', { 'data-act': 'rules' }, 'Spelregels')),
+    E('button', { class: 'btn ghost wide', 'data-act': 'close' }, 'Sluiten')];
+  else if (T.sheet === 'confirmNew') body = [E('h2', null, 'Nieuw spel?'),
+    E('p', null, G.status === 'playing' ? 'Het potje dat nu loopt, stopt dan. De scores gaan terug naar nul.' : 'De kaarten worden opnieuw geschud.'),
+    E('div', { class: 'acts' }, E('button', { class: 'btn ghost', 'data-act': 'close' }, 'Annuleren'), E('button', { class: 'btn primary', 'data-act': 'newGame' }, 'Schudden en delen'))];
+  else if (T.sheet === 'rules') body = [E('h2', null, 'Spelregels'),
+    E('ul', null,
+      E('li', null, 'Elke kaart heeft vier kenmerken: het aantal (1, 2 of 3), de vorm (rondje, vierkant of kruis), de kleur (blauw, oranje of roze) en de vulling (vol, gestreept of leeg).'),
+      E('li', null, 'Drie kaarten vormen een set als elk kenmerk bij alle drie hetzelfde is, of bij alle drie verschillend.'),
+      E('li', null, exCards([0, 10, 20], 'een set: aantal en vulling allemaal anders, vorm en kleur allemaal hetzelfde')),
+      E('li', null, exCards([0, 10, 23], 'geen set: twee rondjes en één vierkant')),
+      E('li', null, 'Zie je een set, roep dan "Set!". Wie het eerst riep, tikt op de eigen Set-knop en kiest de drie kaarten. Klopt het, dan krijg je een punt en komen er nieuwe kaarten. Klopt het niet, dan mag de ander.'),
+      E('li', null, 'Ziet niemand een set, tik dan op de plusknop aan de zijkant: dan komen er drie kaarten bij. Ligt er toch nog een set, dan zegt de app dat. Tik je nog een keer, dan licht er een kaart op die erbij hoort.'),
+      E('li', null, 'Is de stapel op en ligt er geen set meer, dan is het potje voorbij. Wie de meeste sets heeft, wint.'),
+      E('li', null, 'Het spel wordt op dit apparaat bewaard. Werkt ook zonder internet. Zet op de iPad de draairichting vast, dan blijft het scherm staan als hij plat ligt.')),
+    E('button', { class: 'btn ghost wide', 'data-act': T.sheet_back || 'close' }, 'Sluiten')];
+  wrap.hidden = false;
+  wrap.replaceChildren(E('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true' }, body));
+}
+
+/* ---------- messages ---------- */
+function say(i, text, ms) {
+  T.msg[i] = text;
+  clearTimeout(T.msgTimer[i]);
+  T.msgTimer[i] = setTimeout(() => { T.msg[i] = null; render(); }, ms || 2600);
+}
+const sayBoth = (text, ms) => { say(0, text, ms); say(1, text, ms); };
+
+/* ---------- actions ---------- */
+function startGame() {
+  const a = (T.nameDraft[0] || '').trim().slice(0, 16), b = (T.nameDraft[1] || '').trim().slice(0, 16);
+  if (!a || !b) { const el = document.getElementById(a ? 'n1' : 'n0'); if (el) { el.focus(); el.style.borderColor = 'var(--bad)'; } return; }
+  const same = G.names[0] === a && G.names[1] === b;
+  G.names = [a, b];
+  if (!same) { G.wins = [0, 0]; G.draws = 0; }
+  deal();
+}
+function deal() {
+  const deck = shuffle(fullDeck());
+  G.status = 'playing'; G.deck = deck; G.board = deck.splice(0, 12); G.deck = deck; G.scores = [0, 0];
+  T.claim = null; T.sel = []; T.sheet = null; T.fx = new Map(G.board.map((_, i) => [i, 'deal']));
+  T.msg = [null, null];
+  save(); render(); clearFxSoon();
+}
+function claim(i) {
+  if (G.status !== 'playing' || T.busy) return;
+  if (T.claim === i) { T.claim = null; T.sel = []; render(); return; }
+  if (T.claim !== null) { say(i, `${nm(T.claim)} kiest al.`); render(); return; }
+  T.claim = i; T.sel = []; T.msg = [null, null];
+  render();
+}
+function tapCard(k) {
+  if (G.status !== 'playing' || T.busy) return;
+  if (T.claim === null) { sayBoth('Tik eerst op je eigen Set-knop.'); render(); return; }
+  const at = T.sel.indexOf(k);
+  if (at >= 0) T.sel.splice(at, 1); else T.sel.push(k);
+  if (T.sel.length < 3) { render(); return; }
+  const p = T.claim, picked = T.sel.slice(), [a, b, c] = picked.map(x => G.board[x]);
+  T.busy = true;
+  if (isSet(a, b, c)) {
+    T.fx = new Map(picked.map(x => [x, 'go' + p]));
+    render();
+    setTimeout(() => {
+      G.scores[p] = (G.scores[p] || 0) + 1;
+      const fresh = new Map();
+      if (G.board.length > 12 || !G.deck.length) {
+        picked.sort((x, y) => y - x).forEach(x => G.board.splice(x, 1));
+      } else {
+        for (const x of picked) { G.board[x] = G.deck.shift(); fresh.set(x, 'deal'); }
+      }
+      T.fx = fresh; T.claim = null; T.sel = []; T.busy = false; T.bump = p;
+      say(p, 'Raak! Eén set erbij.'); say(1 - p, `${nm(p)} pakt een set.`);
+      save(); checkEnd(); render(); clearFxSoon();
+      setTimeout(() => { if (T.bump === p) { T.bump = null; } }, 600);
+    }, 430);
+  } else {
+    T.fx = new Map(picked.map(x => [x, 'nope']));
+    T.claim = null;
+    say(p, 'Dat is geen set.'); say(1 - p, 'Geen set! Jouw kans.');
+    render();
+    setTimeout(() => { T.fx = new Map(); T.sel = []; T.busy = false; render(); }, 480);
+  }
+}
+function more() {
+  if (G.status !== 'playing' || T.claim !== null || T.busy) return;
+  const s = findSet(G.board);
+  if (s) {
+    const now = Date.now();
+    if (now - T.hintAt < 12000) {
+      T.fx = new Map([[s[Math.floor(Math.random() * 3)], 'hint']]);
+      sayBoth('Deze kaart hoort bij een set.', 3000);
+      render(); setTimeout(() => { T.fx = new Map(); render(); }, 3200);
+      T.hintAt = 0;
+    } else {
+      T.hintAt = now;
+      sayBoth('Er ligt nog een set. Tik nog eens voor een hint.', 3200);
+      render();
+    }
+    return;
+  }
+  if (!G.deck.length) { checkEnd(); render(); return; }
+  const start = G.board.length;
+  G.board.push(...G.deck.splice(0, 3));
+  T.fx = new Map([[start, 'deal'], [start + 1, 'deal'], [start + 2, 'deal']]);
+  sayBoth('Drie kaarten erbij.');
+  save(); render(); clearFxSoon();
+}
+function checkEnd() {
+  if (G.status !== 'playing' || G.deck.length || findSet(G.board)) return;
+  G.status = 'over';
+  const [a, b] = G.scores;
+  if (a === b) G.draws = (G.draws || 0) + 1; else G.wins[a > b ? 0 : 1] = (G.wins[a > b ? 0 : 1] || 0) + 1;
+  save();
+  setTimeout(() => showRainbow(a === b ? null : (a > b ? 0 : 1)), 450);
+}
+let fxTimer = 0;
+function clearFxSoon() { clearTimeout(fxTimer); fxTimer = setTimeout(() => { T.fx = new Map(); }, 600); }
+
+/* ---------- the winner's rainbow ---------- */
+const RB_BANDS = ['❤️', '🧡', '💛', '💚', '💙', '💜'];
+const RB_FALL = ['🎉', '🥳', '✨', '🏆', '🎊', '⭐', '🌈', '👑'];
+function showRainbow(w) {
+  const root = $('#fx');
+  root.className = ''; root.replaceChildren();
+  const W = innerWidth || 1024, H = innerHeight || 768;
+  const R = Math.min(W * 0.36, H * 0.34, 260), fs = Math.max(16, Math.round(R / 8.5)), step = fs * 1.05;
+  const cx = W / 2, cy = H / 2 + R / 2.4;
+  RB_BANDS.forEach((em, bi) => {
+    const r = R - bi * step, n = Math.max(5, Math.round(Math.PI * r / fs));
+    for (let k = 0; k <= n; k++) {
+      const t = k / n, a = Math.PI * (1 - t);
+      root.append(E('span', { class: 'rb-e', style: `left:${(cx + Math.cos(a) * r).toFixed(1)}px;top:${(cy - Math.sin(a) * r).toFixed(1)}px;--fs:${fs}px;animation-delay:${(t * 1.1 + bi * 0.07).toFixed(2)}s` }, em));
+    }
+  });
+  root.append(E('span', { class: 'rb-e', style: `left:${cx}px;top:${(cy - fs * 0.9).toFixed(1)}px;--fs:${Math.round(fs * 2.4)}px;animation-delay:1.2s` }, w == null ? '🤝' : '🏆'));
+  root.append(E('div', { class: 'rb-name', style: `top:${(cy + fs * 0.6).toFixed(1)}px` }, w == null ? 'Gelijkspel!' : `${nm(w)} wint!`));
+  for (let i = 0; i < 30; i++) root.append(E('span', { class: 'rb-fall',
+    style: `left:${(Math.random() * 96).toFixed(1)}%;animation-duration:${(2.6 + Math.random() * 2).toFixed(2)}s;animation-delay:${(1.3 + Math.random() * 2).toFixed(2)}s;--r:${(Math.random() * 720 - 360).toFixed(0)}deg` }, RB_FALL[i % RB_FALL.length]));
+  setTimeout(() => root.classList.add('fade'), 6500);
+  setTimeout(() => { root.replaceChildren(); root.className = ''; }, 7200);
+}
+
+/* ---------- keep the screen on while the iPad lies on the table ---------- */
+let wakeLock = null;
+async function wake() {
+  try {
+    if (wakeLock || !navigator.wakeLock || document.visibilityState !== 'visible') return;
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch (e) {}
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const n = e.target.closest('[data-act]');
+  if (!n || n.disabled) return;
+  wake();
+  const a = n.dataset.act;
+  if (a === 'card') tapCard(+n.dataset.i);
+  else if (a === 'claim') claim(+n.dataset.p);
+  else if (a === 'more') more();
+  else if (a === 'menu') { T.sheet = 'menu'; render(); }
+  else if (a === 'askNew') { T.sheet = 'confirmNew'; render(); }
+  else if (a === 'newGame') deal();
+  else if (a === 'names') { T.nameDraft = G.names.slice(); T.sheet = 'names'; render(); }
+  else if (a === 'rules') { T.sheet_back = T.sheet === 'setup' ? 'backSetup' : 'close'; T.sheet = 'rules'; render(); }
+  else if (a === 'backSetup') { T.sheet = 'setup'; T.sheet_back = null; render(); }
+  else if (a === 'start') startGame();
+  else if (a === 'close') { T.sheet = G.status === 'setup' ? 'setup' : null; T.sheet_back = null; render(); }
+});
+document.addEventListener('input', e => {
+  if (e.target.id === 'n0') T.nameDraft[0] = e.target.value;
+  if (e.target.id === 'n1') T.nameDraft[1] = e.target.value;
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); startGame(); }
+  if (e.key === 'Escape' && T.sheet && G.status !== 'setup') { T.sheet = null; render(); }
+});
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') wake(); });
+try { new ResizeObserver(() => layout()).observe($('#grid')); } catch (e) { addEventListener('resize', layout); }
+render();
+})();
+</script>
+<script>
+/* Offline: keep a copy of the game on this device so it also opens in airplane mode. */
+if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>

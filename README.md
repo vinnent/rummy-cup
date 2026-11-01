@@ -11,3 +11,11 @@ Spelen: <https://vinnent.github.io/rummy-cup/>
 3. Open de app één keer vanaf je beginscherm terwijl je nog internet hebt.
 
 Daarna werkt hij ook in vliegtuigmodus. Een lopend spel wordt op het apparaat bewaard.
+
+# Drietal
+
+Een kaartspel voor twee aan één iPad die plat tussen jullie in ligt. Zoek drie kaarten waarbij elk kenmerk (aantal, vorm, kleur, vulling) bij alle drie hetzelfde of bij alle drie anders is. Wie het eerst "Set!" roept, tikt op de eigen knop en kiest de kaarten.
+
+Spelen: <https://vinnent.github.io/rummy-cup/drietal/>
+
+Offline zetten gaat net als bij Rummy Cup: open de link in Safari, zet hem op je beginscherm en open hem één keer vanaf daar met internet.
