@@ -21,7 +21,8 @@
 :root{
   --felt:#17312c; --felt-2:#1f3d37; --felt-3:#29504a; --edge:#0e221e;
   --ink:#eef3ef; --muted:#9fb7ae; --card:#fbf8ef; --card-edge:#d9cfb8;
-  --c0:#1f63c9; --c1:#e2780c; --c2:#d4237f;
+  --c0:#93bdf0; --c1:#f8b47c; --c2:#f29cc6;          /* pastel fills: blauw, oranje (perzik), roze */
+  --c0-line:#5b95dc; --c1-line:#ec9550; --c2-line:#de6aa3;  /* the same colours a shade deeper, for lines and stripes */
   --p0:#f0b12b; --p1:#5fd3c3; --p-ink:#13201b;
   --bad:#ff6d61; --shadow:rgba(0,0,0,.45);
   --f-display:"Rubik","Arial Black",system-ui,sans-serif;
@@ -94,10 +95,10 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--p0);outline-off
 @keyframes deal{from{transform:scale(.5) rotate(-8deg);opacity:0}to{transform:none;opacity:1}}
 
 /* Symbols */
-.sym .s0{fill:var(--c0);stroke:var(--c0)} .sym .s1{fill:var(--c1);stroke:var(--c1)} .sym .s2{fill:var(--c2);stroke:var(--c2)}
+.sym .s0{fill:var(--c0);stroke:var(--c0-line)} .sym .s1{fill:var(--c1);stroke:var(--c1-line)} .sym .s2{fill:var(--c2);stroke:var(--c2-line)}
 .sym .f1.s0{fill:url(#st0)} .sym .f1.s1{fill:url(#st1)} .sym .f1.s2{fill:url(#st2)}
 .sym .f2{fill:none}
-#st0 rect{fill:var(--c0)} #st1 rect{fill:var(--c1)} #st2 rect{fill:var(--c2)}
+#st0 rect{fill:var(--c0-line)} #st1 rect{fill:var(--c1-line)} #st2 rect{fill:var(--c2-line)}
 
 /* Side: the stack and the controls */
 .side{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;width:clamp(58px, 7vw, 76px)}
@@ -261,7 +262,7 @@ function cardSVG(id) {
   const sym = y => shape === 0 ? `<circle cx="50" cy="${y}" r="17"/>`
     : shape === 1 ? `<rect x="34" y="${y - 16}" width="32" height="32" rx="5"/>`
     : `<path d="${tri(y)}"/>`;
-  return `<svg viewBox="0 0 100 150" class="sym" aria-hidden="true"><g class="${cls}" stroke-width="4" stroke-linejoin="round">${ys.map(sym).join('')}</g></svg>`;
+  return `<svg viewBox="0 0 100 150" class="sym" aria-hidden="true"><g class="${cls}" stroke-width="4.5" stroke-linejoin="round">${ys.map(sym).join('')}</g></svg>`;
 }
 function cardLabel(id) {
   const [n, shape, fill, color] = feat(id);
@@ -545,7 +546,9 @@ render();
 /* Offline: keep a copy of the game on this device so it also opens in airplane mode. */
 /* New version: the copy-keeper swaps itself in, and the page reloads once nobody is choosing cards. */
 if ('serviceWorker' in navigator) {
-  let hadCtrl = !!navigator.serviceWorker.controller, reloading = false;
+  /* Only an update of Drietal's own copy-keeper counts; the first time it takes over (from Rummy Cup's, or from none) is not an update. */
+  const ours = w => !!w && /\/drietal\/sw\.js$/.test(w.scriptURL);
+  let hadCtrl = ours(navigator.serviceWorker.controller), reloading = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!hadCtrl) { hadCtrl = true; return; }
     if (reloading) return;
