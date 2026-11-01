@@ -20,7 +20,7 @@
    (the top one turned upside down), the cards lie in the middle, the stack and +3 sit at the side. */
 :root{
   --felt:#0c0c0d; --felt-2:#18181a; --felt-3:#2c2c30; --edge:#000;
-  --ink:#f2f2f0; --muted:#a3a3a6; --card:#fbf8ef; --card-edge:#d9cfb8;
+  --ink:#f2f2f0; --muted:#a3a3a6; --card:#ffffff; --card-edge:#cfcfd2;
   --c0:#1d5fd6; --c1:#dc2a1f; --c2:#f5b700;               /* primary colours: blauw, rood, geel */
   --c0-line:#1d5fd6; --c1-line:#dc2a1f; --c2-line:#d49800; /* lines and stripes; yellow a touch deeper to stay readable */
   --p0:#f0b12b; --p1:#5fd3c3; --p-ink:#13201b;
@@ -89,7 +89,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--p0);outline-off
 .grid{min-width:0;min-height:0;display:flex;align-items:center;justify-content:center}
 .cards{display:grid;grid-template-columns:repeat(var(--cols,4), var(--cw,100px));gap:var(--gap,12px);justify-content:center;align-content:center}
 .card{width:var(--cw,100px);aspect-ratio:2/3;padding:0;border:0;border-radius:calc(var(--cw,100px) * .12);
-  background:linear-gradient(180deg,var(--card) 0 82%,var(--card-edge));box-shadow:0 2px 0 var(--card-edge),0 6px 14px var(--shadow);
+  background:linear-gradient(180deg,var(--card) 0 88%,var(--card-edge));box-shadow:0 2px 0 var(--card-edge),0 6px 14px var(--shadow);
   display:grid;place-items:center;transition:transform .12s ease, box-shadow .12s ease}
 .card svg{width:92%;height:92%;display:block}
 .card.sel{transform:scale(1.05);box-shadow:0 0 0 calc(var(--cw,100px) * .045) var(--pc, var(--p0)),0 10px 22px var(--shadow)}
@@ -113,7 +113,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--p0);outline-off
 /* Side: the stack and the controls */
 .side{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;width:clamp(58px, 7vw, 76px)}
 .stack{display:flex;flex-direction:column;align-items:center;gap:4px;font:800 20px/1 var(--f-display);font-variant-numeric:tabular-nums}
-.stack i{width:34px;height:23px;border-radius:5px;background:var(--card);box-shadow:3px -3px 0 var(--card-edge),6px -6px 0 rgba(217,207,184,.6)}
+.stack i{width:34px;height:23px;border-radius:5px;background:var(--card);box-shadow:3px -3px 0 var(--card-edge),6px -6px 0 rgba(207,207,210,.6)}
 .round{width:clamp(52px, 6vw, 64px);height:clamp(52px, 6vw, 64px);border-radius:50%;border:0;background:var(--felt-3);color:var(--ink);
   display:grid;place-items:center;font:800 19px/1 var(--f-display);box-shadow:0 3px 0 rgba(0,0,0,.35)}
 .round:active{transform:translateY(2px)}
