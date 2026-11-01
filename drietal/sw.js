@@ -1,7 +1,7 @@
 /* Keeps Drietal on the device so it opens without internet.
    Only answers for its own files: other apps on this site have their own copy-keeper. */
 const PREFIX = 'drietal-';
-const APP = PREFIX + 'app-2efaba21d5';
+const APP = PREFIX + 'app-6960b2cb37';
 const FONTS = PREFIX + 'fonts';
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 const OWN = new Set(SHELL.map(p => new URL(p, self.registration.scope).pathname));
