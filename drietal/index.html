@@ -76,15 +76,15 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--p0);outline-off
 /* Table */
 .board{min-height:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:10px max(12px, 1.6vw)}
 .grid{min-width:0;min-height:0;display:flex;align-items:center;justify-content:center}
-.cards{display:grid;grid-template-columns:repeat(var(--cols,4), var(--cw,150px));gap:var(--gap,12px);justify-content:center;align-content:center}
-.card{width:var(--cw,150px);aspect-ratio:3/2;padding:0;border:0;border-radius:calc(var(--cw,150px) * .09);
+.cards{display:grid;grid-template-columns:repeat(var(--cols,4), var(--cw,100px));gap:var(--gap,12px);justify-content:center;align-content:center}
+.card{width:var(--cw,100px);aspect-ratio:2/3;padding:0;border:0;border-radius:calc(var(--cw,100px) * .12);
   background:linear-gradient(180deg,var(--card) 0 82%,var(--card-edge));box-shadow:0 2px 0 var(--card-edge),0 6px 14px var(--shadow);
   display:grid;place-items:center;transition:transform .12s ease, box-shadow .12s ease}
 .card svg{width:92%;height:92%;display:block}
-.card.sel{transform:scale(1.05);box-shadow:0 0 0 calc(var(--cw,150px) * .035) var(--pc, var(--p0)),0 10px 22px var(--shadow)}
-.card.hint{transform:scale(1.06);box-shadow:0 0 0 calc(var(--cw,150px) * .045) #fff,0 0 34px rgba(255,255,255,.75);animation:hint .7s ease-in-out infinite alternate}
+.card.sel{transform:scale(1.05);box-shadow:0 0 0 calc(var(--cw,100px) * .045) var(--pc, var(--p0)),0 10px 22px var(--shadow)}
+.card.hint{transform:scale(1.06);box-shadow:0 0 0 calc(var(--cw,100px) * .055) #fff,0 0 34px rgba(255,255,255,.75);animation:hint .7s ease-in-out infinite alternate}
 @keyframes hint{from{transform:scale(1.06)}to{transform:scale(.98)}}
-.card.nope{animation:nope .45s ease-in-out;box-shadow:0 0 0 calc(var(--cw,150px) * .035) var(--bad),0 6px 14px var(--shadow)}
+.card.nope{animation:nope .45s ease-in-out;box-shadow:0 0 0 calc(var(--cw,100px) * .045) var(--bad),0 6px 14px var(--shadow)}
 @keyframes nope{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
 .card.go0{animation:go0 .45s ease-in forwards}
 .card.go1{animation:go1 .45s ease-in forwards}
@@ -132,7 +132,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--p0);outline-off
 .menu{display:flex;flex-direction:column}
 .menu button{height:54px;text-align:left;border:0;border-bottom:1px solid var(--felt-3);background:transparent;font:600 17px var(--f-ui);padding:0 2px}
 .ex{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:14px}
-.ex .card{--cw:76px;pointer-events:none}
+.ex .card{--cw:54px;pointer-events:none}
 .tally{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:14px}
 .tally b{color:var(--ink);font:800 18px var(--f-display)}
 
@@ -253,15 +253,15 @@ function E(tag, attrs, ...kids) {
   for (const c of kids.flat(Infinity)) if (c != null && c !== false && c !== '') n.append(c instanceof Node ? c : document.createTextNode(String(c)));
   return n;
 }
-const tri = x => `M${x} 31L${x + 19} 66H${x - 19}Z`;
+const tri = y => `M50 ${y - 18}L69 ${y + 17}H31Z`;
 function cardSVG(id) {
   const [n, shape, fill, color] = feat(id);
-  const xs = [[75], [53, 97], [31, 75, 119]][n];
+  const ys = [[75], [53, 97], [31, 75, 119]][n];
   const cls = `s${color} f${fill}`;
-  const sym = x => shape === 0 ? `<circle cx="${x}" cy="50" r="17"/>`
-    : shape === 1 ? `<rect x="${x - 16}" y="34" width="32" height="32" rx="5"/>`
-    : `<path d="${tri(x)}"/>`;
-  return `<svg viewBox="0 0 150 100" class="sym" aria-hidden="true"><g class="${cls}" stroke-width="4" stroke-linejoin="round">${xs.map(sym).join('')}</g></svg>`;
+  const sym = y => shape === 0 ? `<circle cx="50" cy="${y}" r="17"/>`
+    : shape === 1 ? `<rect x="34" y="${y - 16}" width="32" height="32" rx="5"/>`
+    : `<path d="${tri(y)}"/>`;
+  return `<svg viewBox="0 0 100 150" class="sym" aria-hidden="true"><g class="${cls}" stroke-width="4" stroke-linejoin="round">${ys.map(sym).join('')}</g></svg>`;
 }
 function cardLabel(id) {
   const [n, shape, fill, color] = feat(id);
@@ -284,10 +284,10 @@ function layout() {
   let best = { cw: 0, cols: 1 };
   for (let c = 1; c <= n; c++) {
     const r = Math.ceil(n / c);
-    const cw = Math.min((W - (c - 1) * gap) / c, ((H - (r - 1) * gap) / r) * 1.5);
+    const cw = Math.min((W - (c - 1) * gap) / c, ((H - (r - 1) * gap) / r) / 1.5);
     if (cw > best.cw) best = { cw, cols: c };
   }
-  cards.style.setProperty('--cw', Math.floor(Math.min(best.cw, 260)) + 'px');
+  cards.style.setProperty('--cw', Math.floor(Math.min(best.cw, 190)) + 'px');
   cards.style.setProperty('--cols', best.cols);
   cards.style.setProperty('--gap', gap + 'px');
 }
